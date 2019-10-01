@@ -63,23 +63,24 @@ SMOD		= $(call TOLOWER,$(call GETTK,MODE,$(TRAITS)))
 ARCH		= $(call TOLOWER,$(call GETTK,ARCHITECTURE,$(TRAITS)))
 MACH		= $(call TOLOWER,$(call GETTK,MACHINE,$(TRAITS)))
 MMOD		= $(call TOLOWER,$(call GETTK,MODEL,$(TRAITS)))
-CPUS        = $(shell $(BIN)/eposcfg CPUS 2> /dev/null)
+CPUS		= $(shell $(BIN)/eposcfg CPUS 2> /dev/null)
 NODES		= $(shell $(BIN)/eposcfg NODES 2> /dev/null)
 STIME		= $(shell $(BIN)/eposcfg EXPECTED_SIMULATION_TIME 2> /dev/null)
-LIBARCH		= $(LIB)/lib$(LARCHNAME)_$(ARCH).a
-LIBMACH		= $(LIB)/lib$(LMACHNAME)_$(ARCH).a
-LIBSYS		= $(LIB)/lib$(LSYSNAME)_$(ARCH).a
-LIBINIT		= $(LIB)/lib$(LINITNAME)_$(ARCH).a
-LIBUTIL		= $(LIB)/lib$(LUTILNAME)_$(ARCH).a
-LARCH		= $(LARCHNAME)_$(ARCH)
-LMACH		= $(LMACHNAME)_$(ARCH)
-LSYS		= $(LSYSNAME)_$(ARCH)
-LINIT		= $(LINITNAME)_$(ARCH)
-LUTIL		= $(LUTILNAME)_$(ARCH)
+LIBARCH		= $(LIB)/lib$(LARCHNAME)_$(MMOD).a
+LIBMACH		= $(LIB)/lib$(LMACHNAME)_$(MMOD).a
+LIBSYS		= $(LIB)/lib$(LSYSNAME)_$(MMOD).a
+LIBINIT		= $(LIB)/lib$(LINITNAME)_$(MMOD).a
+LIBUTIL		= $(LIB)/lib$(LUTILNAME)_$(MMOD).a
+LARCH		= $(LARCHNAME)_$(MMOD)
+LMACH		= $(LMACHNAME)_$(MMOD)
+LSYS		= $(LSYSNAME)_$(MMOD)
+LINIT		= $(LINITNAME)_$(MMOD)
+LUTIL		= $(LUTILNAME)_$(MMOD)
 
 # Compiler prefixes
 ia32_COMP_PREFIX	:= /usr/local/ia32/gcc-7.2.0/bin/ia32-
 armv7_COMP_PREFIX	:= /usr/local/arm/gcc-7.2.0/bin/arm-
+armv8_COMP_PREFIX	:= /usr/local/arm/gcc-7.2.0/bin/arm-
 avr8_COMP_PREFIX	:= /usr/local/avr/gcc-4.4.4/bin/avr-
 COMP_PREFIX		= $($(ARCH)_COMP_PREFIX)
 
@@ -104,34 +105,69 @@ pc_CODE_NAME		:= .init
 pc_DATA_NAME		:= .data
 pc_IMG_SUFFIX		:= .img
 
-cortex_a_CC_FLAGS	:= -mcpu=cortex-a9
-cortex_a_AS_FLAGS	:= -mcpu=cortex-a9
-cortex_a_LD_FLAGS	:=
-ifeq ($(MMOD),zynq)
-cortex_a_EMULATOR	= qemu-system-arm -machine xilinx-zynq-a9  -smp $(CPUS) -m $(MEM_SIZE)k -serial null -serial mon:stdio -nographic -no-reboot -kernel 
-endif
 ifeq ($(MMOD),realview_pbx)
-cortex_a_EMULATOR	= qemu-system-arm -machine realview-pbx-a9 -smp $(CPUS) -m $(MEM_SIZE)k -serial null -serial mon:stdio -nographic -no-reboot -kernel 
+cortex_CC_FLAGS		:= -mcpu=cortex-a9
+cortex_AS_FLAGS		:= -mcpu=cortex-a9
+cortex_LD_FLAGS		:=
+cortex_EMULATOR		= qemu-system-arm -machine realview-pbx-a9 -smp $(CPUS) -m $(MEM_SIZE)k -serial null -serial mon:stdio -nographic -no-reboot -kernel 
+cortex_DEBUGGER		:= arm-none-eabi-gdb
+cortex_FLASHER		= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
+cortex_MAGIC		:= --omagic
+cortex_CODE_NAME	:= .init
+cortex_DATA_NAME	:=
+cortex_IMG_SUFFIX	:= .bin
 endif
-cortex_a_DEBUGGER	:= arm-none-eabi-gdb
-cortex_a_FLASHER	= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
-cortex_a_MAGIC		:= --omagic
-cortex_a_CODE_NAME	:= .init
-cortex_a_DATA_NAME	:=
-cortex_a_IMG_SUFFIX	:= .bin
 
-cortex_m_CC_FLAGS	:= -mcpu=cortex-m3 -mthumb -mabi=atpcs -Wno-builtin-declaration-mismatch -Wno-array-bounds
-cortex_m_AS_FLAGS	:= -mcpu=cortex-m3 -mthumb -meabi=gnu
-cortex_m_LD_FLAGS	:=
-ifeq ($(MMOD),lm3s811)
-cortex_m_EMULATOR	= qemu-system-arm -machine lm3s811evb -m $(MEM_SIZE)k -serial null -serial mon:stdio -nographic -no-reboot -kernel 
+ifeq ($(MMOD),zynq)
+cortex_CC_FLAGS		:= -mcpu=cortex-a9
+cortex_AS_FLAGS		:= -mcpu=cortex-a9
+cortex_EMULATOR		= qemu-system-arm -machine xilinx-zynq-a9  -smp $(CPUS) -m $(MEM_SIZE)k -serial null -serial mon:stdio -nographic -no-reboot -kernel 
+cortex_DEBUGGER		:= arm-none-eabi-gdb
+cortex_FLASHER		= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
+cortex_MAGIC		:= --omagic
+cortex_CODE_NAME	:= .init
+cortex_DATA_NAME	:=
+cortex_IMG_SUFFIX	:= .bin
 endif
-cortex_m_DEBUGGER	:= arm-none-eabi-gdb
-cortex_m_FLASHER	= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
-cortex_m_MAGIC		:= --omagic
-cortex_m_CODE_NAME	:= .init
-cortex_m_DATA_NAME	:= .data
-cortex_m_IMG_SUFFIX	:= .img
+
+ifeq ($(MMOD),raspberry_pi3)
+cortex_CC_FLAGS		:= -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=vfp -Wno-array-bounds
+cortex_AS_FLAGS		:= -mcpu=cortex-a53
+cortex_LD_FLAGS		:=
+cortex_EMULATOR		= qemu-system-aarch64 -machine type=virt -cpu cortex-a53 -smp $(CPUS) -m $(MEM_SIZE)k -serial null -serial mon:stdio -nographic -no-reboot -kernel 
+cortex_DEBUGGER		:= arm-none-eabi-gdb
+cortex_FLASHER		= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
+cortex_MAGIC		:= --omagic
+cortex_CODE_NAME	:= .init
+cortex_DATA_NAME	:=
+cortex_IMG_SUFFIX	:= .bin
+endif
+
+ifeq ($(MMOD),lm3s811)
+cortex_EMULATOR		= qemu-system-arm -machine lm3s811evb -m $(MEM_SIZE)k -serial mon:stdio -serial null -nographic -no-reboot -kernel 
+cortex_CC_FLAGS		:= -mcpu=cortex-m3 -mthumb -mabi=atpcs -Wno-builtin-declaration-mismatch -Wno-array-bounds
+cortex_AS_FLAGS		:= -mcpu=cortex-m3 -mthumb -meabi=gnu
+cortex_LD_FLAGS		:=
+cortex_DEBUGGER		:= arm-none-eabi-gdb
+cortex_FLASHER		= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
+cortex_MAGIC		:= --omagic
+cortex_CODE_NAME	:= .init
+cortex_DATA_NAME	:= .data
+cortex_IMG_SUFFIX	:= .img
+endif
+
+ifeq ($(MMOD),emote3)
+cortex_EMULATOR		= 
+cortex_CC_FLAGS		:= -mcpu=cortex-m3 -mthumb -mabi=atpcs -Wno-builtin-declaration-mismatch -Wno-array-bounds
+cortex_AS_FLAGS		:= -mcpu=cortex-m3 -mthumb -meabi=gnu
+cortex_LD_FLAGS		:=
+cortex_DEBUGGER		:= arm-none-eabi-gdb
+cortex_FLASHER		= $(TLS)/eposflash/eposflash-$(MMOD) -d /dev/ttyACM0 -f
+cortex_MAGIC		:= --omagic
+cortex_CODE_NAME	:= .init
+cortex_DATA_NAME	:= .data
+cortex_IMG_SUFFIX	:= .img
+endif
 
 atmega_CC_FLAGS		:= -mmcu=atmega128 -Wno-inline
 atmega_AS_FLAGS		:= -mmcu=atmega128

@@ -1,6 +1,6 @@
 // EPOS LM3S811 (ARM Cortex) MCU Initialization
 
-#include <machine/main.h>
+#include <machine/common.h>
 
 #ifdef __mmod_lm3s811__
 

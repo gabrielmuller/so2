@@ -53,7 +53,6 @@ public:
 
     // Interrupts
     static const unsigned int INTS = 64;
-    static const unsigned int LAST_INT = INTS;
     static const unsigned int EXC_INT = 0;
     static const unsigned int HARD_INT = 16;
     static const unsigned int SOFT_INT = HARD_INT + IRQS;
@@ -170,7 +169,6 @@ public:
     using Engine::INT_NIC0_ERR;
     using Engine::INT_NIC0_TIMER;
     using Engine::INT_RESCHEDULER;
-    using Engine::LAST_INT;
 
 public:
     IC() {}

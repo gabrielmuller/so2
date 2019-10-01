@@ -107,7 +107,7 @@ public:
         Reg32 lcrh = data_bits == 8 ? WLEN8 : data_bits == 7 ? WLEN7 : data_bits = 6 ? WLEN6 : WLEN5; // config data bits
         lcrh |= FEN; // always use FIFO
         lcrh |= stop_bits == 2 ? STP2 : 0; // config stop bits
-        lcrh |= (parity == UART_Common::EVEN) ? (EPS | PEN) : (parity == UART_Common::ODD) ? PEN : 0; // config and enable even/odd parity
+        lcrh |= (parity == 2) ? (EPS | PEN) : (parity == 1) ? PEN : 0; // config and enable even/odd parity
 
         reg(UCR) &= ~UEN;                       // Disable UART for configuration
         reg(ICR) = ~0;                          // Clear all interrupts

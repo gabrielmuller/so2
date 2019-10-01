@@ -1,6 +1,6 @@
 // EPOS PC AMD PCNet II (Am79C970A) Ethernet NIC Mediator Initialization
 
-#include <machine/main.h>
+#include <machine/machine.h>
 #include <machine/pci.h>
 #include <machine/pc/pcnet32.h>
 #include <system.h>

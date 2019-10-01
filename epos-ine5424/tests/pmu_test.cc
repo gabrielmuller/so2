@@ -77,7 +77,7 @@ int * array[TASKS];
 int main()
 {
     cout << "PMU Test (using a P-EDF application)\n" << endl;
-    cout << "Using " << Machine::n_cpus() << " CPUs" << endl;
+    cout << "Using " << CPU::cores() << " CPUs" << endl;
 
     PMU::config(0, PMU::INSTRUCTION);
     PMU::config(1, PMU::DVS_CLOCK);
@@ -195,7 +195,7 @@ int job(unsigned int repetitions, int id)
     unsigned long long llc_hit = 0;
 
     sem.p();
-    cout << "Starting thread = " << id << " CPU = " << Machine::cpu_id() << "\n";
+    cout << "Starting thread = " << id << " CPU = " << CPU::id() << "\n";
     sem.v();
 
     rand = new Random();

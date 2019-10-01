@@ -6,53 +6,53 @@ OBJS := $(subst .cc,.o,$(shell find *.cc))
 
 all:	install
 
-install: $(MACH)_install_$(SMOD)
+install: install_$(SMOD)_$(MMOD)
 
-$(MACH)_install_library: $(MACH)_init_library
-		$(INSTALL) $(MACH)_init_first.o $(LIB)
-		$(INSTALL) $(MACH)_init_system.o $(LIB)
-		$(INSTALL) $(MACH)_init_application.o $(LIB)
+install_library_$(MMOD): init_library_$(MMOD)
+		$(INSTALL) init_first_$(MMOD).o $(LIB)
+		$(INSTALL) init_system_$(MMOD).o $(LIB)
+		$(INSTALL) init_application_$(MMOD).o $(LIB)
 
-$(MACH)_install_builtin: $(MACH)_init_builtin
-		$(INSTALL) $(MACH)_init $(IMG)
-		$(INSTALL) $(MACH)_init_application.o $(LIB)
+install_builtin_$(MMOD): init_builtin_$(MMOD)
+		$(INSTALL) init_$(MMOD) $(IMG)
+		$(INSTALL) init_application_$(MMOD).o $(LIB)
 
-$(MACH)_install_kernel: $(MACH)_init_kernel
-		$(INSTALL) $(MACH)_init $(IMG)
-		$(INSTALL) $(MACH)_init_application.o $(LIB)
+install_kernel_$(MMOD): init_kernel_$(MMOD)
+		$(INSTALL) init_$(MMOD) $(IMG)
+		$(INSTALL) init_application_$(MMOD).o $(LIB)
 
 
-$(MACH)_init_library: $(OBJS)
-		$(INSTALL) init_first.o $(MACH)_init_first.o
-		$(INSTALL) init_system.o $(MACH)_init_system.o
-		$(INSTALL) init_application.o $(MACH)_init_application.o
+init_library_$(MMOD): $(OBJS)
+		$(INSTALL) init_first.o init_first_$(MMOD).o
+		$(INSTALL) init_system.o init_system_$(MMOD).o
+		$(INSTALL) init_application.o init_application_$(MMOD).o
 
-$(MACH)_init_builtin: $(SRC)/system/$(MACH)_system $(OBJS) $(LIBINIT)
+init_builtin_$(MMOD): $(SRC)/system/system_$(MMOD) $(OBJS) $(LIBINIT)
 		$(LD) $(LDFLAGS) -L$(CCLIB) --omagic \
 		--section-start $(MACH_CODE_NAME)=$(INIT_ADDR) \
-		--entry=_init -o $(MACH)_init \
-		$(LIB)/$(ARCH)_crtbegin.o \
+		--entry=_init -o init_$(MMOD) \
+		$(LIB)/crtbegin_$(MMOD).o \
 		init_first.o init_system.o \
-		$(LIB)/$(ARCH)_crtend.o \
+		$(LIB)/crtend_$(MMOD).o \
 		-l$(LINIT) \
-		-R $(SRC)/system/$(MACH)_system \
+		-R $(SRC)/system/system_$(MMOD) \
 		-l$(LUTIL) -lgcc
-		$(INSTALL) init_application.o $(MACH)_init_application.o
+		$(INSTALL) init_application.o init_application_$(MMOD).o
 
-$(MACH)_init_kernel: $(SRC)/system/$(MACH)_system $(OBJS) $(LIBINIT)
+init_kernel_$(MMOD): $(SRC)/system/system_$(MMOD) $(OBJS) $(LIBINIT)
 		$(LD) $(LDFLAGS) -L$(CCLIB) --omagic \
 		--section-start .init=$(INIT_ADDR) \
-		--entry=_init -o $(MACH)_init \
-		$(LIB)/$(ARCH)_crtbegin.o \
+		--entry=_init -o init_$(MMOD) \
+		$(LIB)/crtbegin_$(MMOD).o \
 		init_first.o init_system.o \
-		$(LIB)/$(ARCH)_crtend.o \
+		$(LIB)/crtend_$(MMOD).o \
 		-l$(LINIT) \
-		-R $(SRC)/system/$(MACH)_system \
+		-R $(SRC)/system/system_$(MMOD) \
 		-l$(LUTIL) -lgcc
-		$(INSTALL) init_application.o $(MACH)_init_application.o
+		$(INSTALL) init_application.o init_application_$(MMOD).o
 
 
 clean:
-		$(CLEAN) *.o *_init
+		$(CLEAN) *.o $(shell find -maxdepth 1 -executable -not -type d)
 
 FORCE:

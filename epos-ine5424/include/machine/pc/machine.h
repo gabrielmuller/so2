@@ -4,11 +4,11 @@
 #define __pc_h
 
 #include <architecture.h>
-#include <machine/main.h>
+#include <machine/machine.h>
 #include <machine/rtc.h>
 #include <machine/display.h>
-#include "info.h"
-#include "memory_map.h"
+#include <system/info.h>
+#include <system/memory_map.h>
 #include "ic.h"
 #include <system.h>
 
@@ -38,32 +38,19 @@ public:
     static void reboot();
     static void poweroff();
 
-    static unsigned int n_cpus() { return smp ? _n_cpus : 1; }
-    static unsigned int cpu_id() { return smp ? APIC::id() : 0; }
-
-    static void smp_init(unsigned int n_cpus) {
-        _n_cpus = n_cpus;
-        if(smp)
-            APIC::remap();
-    };
-
-    static void smp_barrier(unsigned long n_cpus = _n_cpus);
-
     static const UUID & uuid() { return System::info()->bm.uuid; }
 
 private:
     static void pre_init(System_Info * si) {
-        if(Machine::cpu_id() == 0)
+        if(CPU::id() == 0) {
             Display::init();
 
-        if(Traits<System>::multicore)
-            smp_init(si->bm.n_cpus);
+            if(Traits<System>::multicore)
+                CPU::smp_init(si->bm.n_cpus);
+        }
     }
 
     static void init();
-
-private:
-    static volatile unsigned int _n_cpus;
 };
 
 __END_SYS

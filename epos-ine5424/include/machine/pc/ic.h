@@ -5,7 +5,7 @@
 
 #include <architecture/cpu.h>
 #include <machine/ic.h>
-#include <machine/pc/memory_map.h>
+#include <system/memory_map.h>
 
 __BEGIN_SYS
 
@@ -141,7 +141,7 @@ public:
         return true;
     }
 
-    static void ipi_send(int dest, int interrupt) {}
+    static void ipi(int dest, int interrupt) {}
 };
 
 // Intel IA-32 APIC (internal, not tested with 82489DX)
@@ -347,7 +347,7 @@ public:
         return read(VERSION);
     }
 
-    static void ipi_send(unsigned int cpu, unsigned int interrupt);
+    static void ipi(unsigned int cpu, unsigned int interrupt);
     static void ipi_init(volatile int * status);
     static void ipi_start(Log_Addr entry, volatile int * status);
 
@@ -530,7 +530,7 @@ public:
         Engine::disable(i);
     }
 
-    using Engine::ipi_send;
+    using Engine::ipi;
     using Engine::irq2int;
 
 private:

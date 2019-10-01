@@ -124,14 +124,14 @@ namespace Scheduling_Criteria
         template <typename ... Tn>
         GRR(int p = NORMAL, Tn & ... an): RR(p) {}
 
-        static unsigned int current_head() { return Machine::cpu_id(); }
+        static unsigned int current_head() { return CPU::id(); }
     };
 
     // CPU Affinity
     class CPU_Affinity: public Priority, public Variable_Queue
     {
     public:
-        static const bool timed = false;
+        static const bool timed = true;
         static const bool dynamic = false;
         static const bool preemptive = true;
 
@@ -140,11 +140,11 @@ namespace Scheduling_Criteria
     public:
         template <typename ... Tn>
         CPU_Affinity(int p = NORMAL, int cpu = ANY, Tn & ... an)
-        : Priority(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? Machine::cpu_id() : (cpu != ANY) ? cpu : ++_next_queue %= Machine::n_cpus()) {}
+        : Priority(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : (cpu != ANY) ? cpu : ++_next_queue %= CPU::cores()) {}
 
         using Variable_Queue::queue;
 
-        static unsigned int current_queue() { return Machine::cpu_id(); }
+        static unsigned int current_queue() { return CPU::id(); }
     };
 
 
@@ -184,14 +184,14 @@ namespace Scheduling_Criteria
 
     public:
         PRM(int p = APERIODIC)
-        : RM(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? Machine::cpu_id() : 0) {}
+        : RM(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : 0) {}
 
         PRM(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, int cpu = ANY)
-        : RM(d, p, c, cpu), Variable_Queue((cpu != ANY) ? cpu : ++_next_queue %= Machine::n_cpus()) {}
+        : RM(d, p, c, cpu), Variable_Queue((cpu != ANY) ? cpu : ++_next_queue %= CPU::cores()) {}
 
         using Variable_Queue::queue;
 
-        static unsigned int current_queue() { return Machine::cpu_id(); }
+        static unsigned int current_queue() { return CPU::id(); }
     };
 
     // Deadline Monotonic
@@ -212,7 +212,7 @@ namespace Scheduling_Criteria
     class EDF: public RT_Common
     {
     public:
-        static const bool timed = false;
+        static const bool timed = true;
         static const bool dynamic = true;
         static const bool preemptive = true;
 
@@ -235,7 +235,7 @@ namespace Scheduling_Criteria
         : EDF(d, p, c, cpu) {}
 
         static unsigned int queue() { return current_head(); }
-        static unsigned int current_head() { return Machine::cpu_id(); }
+        static unsigned int current_head() { return CPU::id(); }
     };
 
     // Partitioned Earliest Deadline First (multicore)
@@ -246,14 +246,14 @@ namespace Scheduling_Criteria
 
     public:
         PEDF(int p = APERIODIC)
-        : EDF(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? Machine::cpu_id() : 0) {}
+        : EDF(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : 0) {}
 
         PEDF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, int cpu = ANY)
-        : EDF(d, p, c, cpu), Variable_Queue((cpu != ANY) ? cpu : ++_next_queue %= Machine::n_cpus()) {}
+        : EDF(d, p, c, cpu), Variable_Queue((cpu != ANY) ? cpu : ++_next_queue %= CPU::cores()) {}
 
         using Variable_Queue::queue;
 
-        static unsigned int current_queue() { return Machine::cpu_id(); }
+        static unsigned int current_queue() { return CPU::id(); }
     };
 
     // Clustered Earliest Deadline First (multicore)
@@ -269,12 +269,12 @@ namespace Scheduling_Criteria
         : EDF(p), Variable_Queue(((_priority == IDLE) || (_priority == MAIN)) ? current_queue() : 0) {} // Aperiodic
 
         CEDF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, int cpu = ANY)
-        : EDF(d, p, c, cpu), Variable_Queue((cpu != ANY) ? cpu / HEADS : ++_next_queue %= Machine::n_cpus() / HEADS) {}
+        : EDF(d, p, c, cpu), Variable_Queue((cpu != ANY) ? cpu / HEADS : ++_next_queue %= CPU::cores() / HEADS) {}
 
         using Variable_Queue::queue;
 
-        static unsigned int current_queue() { return Machine::cpu_id() / HEADS; }
-        static unsigned int current_head() { return Machine::cpu_id() % HEADS; }
+        static unsigned int current_queue() { return CPU::id() / HEADS; }
+        static unsigned int current_head() { return CPU::id() % HEADS; }
     };
 }
 

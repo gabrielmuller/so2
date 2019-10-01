@@ -13,12 +13,14 @@ protected:
     ADC_Common() {}
 
 public:
+    template <typename T>
+    unsigned short read();
 };
 
 __END_SYS
 
-#ifdef __ADC_H
-#include __ADC_H
 #endif
 
+#if defined(__ADC_H) && !defined(__common_only__)
+#include __ADC_H
 #endif

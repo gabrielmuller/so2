@@ -4,7 +4,9 @@
 #define __ia32_tsc_h
 
 #include <architecture/cpu.h>
+#define __common_only__
 #include <architecture/tsc.h>
+#undef __common_only__
 
 __BEGIN_SYS
 

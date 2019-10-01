@@ -473,14 +473,12 @@ protected:
     void gpio_pull_down(unsigned int port, unsigned int pin) { gpio(port, PDR) &= 1 << pin; }
     void gpio_floating(unsigned int port, unsigned int pin) { gpio(port, ODR) &= 1 << pin; }
 
-    // ADC (not implemented for this model)
-    static void adc_config(unsigned char channel);
 
     // PWM (not implemented for this model)
-    static void pwm_config(unsigned int timer, char gpio_port, unsigned int gpio_pin);
+    static void pwm_config(unsigned int timer, char gpio_port, unsigned int gpio_pin) {}
 
     // IEEE 802.15.4 (not present in this model)
-    static void power_ieee802_15_4(const Power_Mode & mode);
+    static void power_ieee802_15_4(const Power_Mode & mode) {}
 
 public:
     static volatile Reg32 & scr(unsigned int o) { return reinterpret_cast<volatile Reg32 *>(SCR_BASE)[o / sizeof(Reg32)]; }

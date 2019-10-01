@@ -28,7 +28,7 @@ public:
         // This barrier is particularly important, since afterwards the temporary stacks
         // and data structures established by SETUP and announced as "free memory" will indeed be
         // available to user threads. 
-        Machine::smp_barrier();
+        CPU::smp_barrier();
         first->_context->load();
     }
 };

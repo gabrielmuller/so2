@@ -3,13 +3,19 @@
 #ifndef __ia32_h
 #define __ia32_h
 
+#define __common_only__
 #include <architecture/cpu.h>
+#undef __common_only__
 
 __BEGIN_SYS
 
-class CPU: public CPU_Common
+class CPU: private CPU_Common
 {
     friend class Init_System;
+    friend class Machine;
+
+private:
+    static const bool smp = Traits<System>::multicore;
 
 public:
     // CPU Native Data Types
@@ -318,9 +324,26 @@ public:
 public:
     CPU() {}
 
+    static Flags flags() { return eflags(); }
+    static void flags(const Flags flags) { eflags(flags); }
+
+    static Reg32 sp() { return esp(); }
+    static void sp(const Reg32 sp) { esp(sp); }
+
+    static Reg32 fr() { return eax(); }
+    static void fr(const Reg32 sp) { eax(sp); }
+
+    static Log_Addr ip() { return eip(); }
+
+    static Reg32 pdp() { return cr3() ; }
+    static void pdp(const Reg32 pdp) { cr3(pdp); }
+
+    static unsigned int id();
+    static unsigned int cores() { return smp ? _cores : 1; }
+
     static Hertz clock() { return _cpu_clock; }
-    static void clock(Reg64 clock) {
-        // clock must be taken as Reg64 because Hertz is Reg32 is some configurations and that's not enough for the comparisons bellow
+    static void clock(const Hertz & frequency) {
+        Reg64 clock = frequency;
         unsigned int dc;
         if(clock <= _cpu_clock * 1875 / 10000)
             dc = 0b10011;   // Minimum duty cycle of 12.5 %
@@ -343,20 +366,6 @@ public:
 
     static void syscall(void * message);
     static void syscalled();
-
-    static Flags flags() { return eflags(); }
-    static void flags(const Flags flags) { eflags(flags); }
-
-    static Reg32 sp() { return esp(); }
-    static void sp(const Reg32 sp) { esp(sp); }
-
-    static Reg32 fr() { return eax(); }
-    static void fr(const Reg32 sp) { eax(sp); }
-
-    static Log_Addr ip() { return eip(); }
-
-    static Reg32 pdp() { return cr3() ; }
-    static void pdp(const Reg32 pdp) { cr3(pdp); }
 
     template<typename T>
     static T tsl(volatile T & lock) {
@@ -383,7 +392,9 @@ public:
     static T cas(volatile T & value, T compare, T replacement) {
         ASM("lock cmpxchgl %2, %3\n" : "=a"(compare) : "a"(compare), "r"(replacement), "m"(value) : "memory");
         return compare;
-   }
+    }
+
+    static void smp_barrier(unsigned long cores = cores()) { CPU_Common::smp_barrier<&finc>(cores, id()); }
 
     static Reg64 htole64(Reg64 v) { return v; }
     static Reg32 htole32(Reg32 v) { return v; }
@@ -646,9 +657,11 @@ private:
     }
     static void init_stack_helper(Log_Addr sp) {}
 
+    static void smp_init(unsigned int cores);
     static void init();
 
 private:
+    static volatile unsigned int _cores;
     static unsigned int _cpu_clock;
     static unsigned int _bus_clock;
 };

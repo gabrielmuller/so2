@@ -1,7 +1,7 @@
 // EPOS PC Run-Time System Information Implementation
 
 #include <utility/debug.h>
-#include <machine/pc/info.h>
+#include <system/info.h>
 
 __BEGIN_SYS
 

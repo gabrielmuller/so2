@@ -4,7 +4,7 @@
 #define __cortex_m_h
 
 #include <architecture.h>
-#include <machine/main.h>
+#include <machine/common.h>
 #include <machine/rtc.h>
 #include __MODEL_H
 #include "info.h"

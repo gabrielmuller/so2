@@ -114,7 +114,7 @@ private:
 public: //TODO: for debugging
 
     static const bool sniffer = Traits<Traits<IEEE802_15_4>::DEVICES::Get<0>::Result>::promiscuous;
-    static const bool state_machine_debugged = false;
+    static const bool stateMachine_Engine_debugged = false;
     static const bool random_backoff = true;
     static const bool silence = true;
     static const bool multichannel = false; // TODO
@@ -311,7 +311,7 @@ protected:
             Time_Stamp data_time = buf->sfd_time_stamp + Timer::us2count(TIME_BETWEEN_MICROFRAMES) + buf->microframe_count * Timer::us2count(TIME_BETWEEN_MICROFRAMES + MICROFRAME_TIME);
 
             Watchdog::kick();
-            if(state_machine_debugged)
+            if(stateMachine_Engine_debugged)
                 kout << SLEEP_DATA;
 
             // If we have a buffer with the same ID, we need to receive the data
@@ -427,7 +427,7 @@ private:
         // State: Update TX Schedule
         CPU::int_disable();
         Timer::int_disable();
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << UPDATE_TX_SCHEDULE;
         Watchdog::kick();
         if(Traits<TSTP>::hysterically_debugged)
@@ -497,7 +497,7 @@ private:
             // State: Contend CCA (Contend part)
 
             Watchdog::kick();
-            if(state_machine_debugged)
+            if(stateMachine_Engine_debugged)
                 kout << CONTEND;
 
             Time_Stamp offset = _tx_pending->offset;
@@ -542,7 +542,7 @@ private:
             //Timer::interrupt(now_ts + offset, cca);
         } else { // Transition: [No TX pending]
             // State: Sleep S
-            if(state_machine_debugged)
+            if(stateMachine_Engine_debugged)
                 kout << SLEEP_S ;
             Watchdog::kick();
             Timer::interrupt(now_ts + Timer::us2count(SLEEP_PERIOD - Radio::SLEEP_TO_RX_DELAY), rx_mf);
@@ -552,7 +552,7 @@ private:
 
     // State: Contend CCA (CCA part)
     static void cca(const IC::Interrupt_Id & id) {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << CCA ;
         Watchdog::kick();
         if(Traits<TSTP>::hysterically_debugged)
@@ -571,7 +571,7 @@ private:
             if(Radio::transmit()) { // Transition: [Channel free]
                 _mf_time += Timer::us2count(TIME_BETWEEN_MICROFRAMES + MICROFRAME_TIME);
                 _mf.dec_count();
-                if(state_machine_debugged)
+                if(stateMachine_Engine_debugged)
                     kout << TX_MF ;
                 Watchdog::kick();
                 while(!Radio::tx_done());
@@ -588,7 +588,7 @@ private:
 
     // State: RX MF (part 1/3)
     static void rx_mf(const IC::Interrupt_Id & id) {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << RX_MF ;
         Watchdog::kick();
         if(Traits<TSTP>::hysterically_debugged)
@@ -609,7 +609,7 @@ private:
 
     // State: RX Data (part 1/3)
     static void rx_data(const IC::Interrupt_Id & id) {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << RX_DATA ;
         Watchdog::kick();
         if(Traits<TSTP>::hysterically_debugged)
@@ -657,7 +657,7 @@ private:
     }
 
     static void tx_data(const IC::Interrupt_Id & id) {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << TX_DATA;
         if(Traits<TSTP>::hysterically_debugged)
             db<TSTP>(TRC) << "TSTP_MAC::tx_data()" << endl;
@@ -695,7 +695,7 @@ private:
 
         // State: Sleep S
         Radio::power(Power_Mode::SLEEP);
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << SLEEP_S;
         if(multichannel)
             Radio::channel(MICROFRAME_CHANNEL);
@@ -780,7 +780,7 @@ public:
 
 protected:
     static const bool sniffer = Traits<Traits<IEEE802_15_4>::DEVICES::Get<0>::Result>::promiscuous;
-    static const bool state_machine_debugged = false;
+    static const bool stateMachine_Engine_debugged = false;
     static const bool random_backoff = true;
     static const unsigned int PERIOD = 150000; // TODO
     static const unsigned int OFFSET_LOWER_BOUND = 2 * IEEE802_15_4::CCA_TX_GAP;
@@ -946,7 +946,7 @@ private:
     // State Machine
 
     static void update_tx_schedule(const IC::Interrupt_Id & id) {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << UPDATE_TX_SCHEDULE;
         if(Traits<TSTP>::hysterically_debugged)
             db<TSTP>(TRC) << "State: Update TX Schedule" << endl;
@@ -1038,13 +1038,13 @@ private:
     }
 
     static void rx() {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << RX;
         // Radio is assumed to always return to RX after TX
     }
 
     static void cca_tx(const IC::Interrupt_Id & id) {
-        if(state_machine_debugged)
+        if(stateMachine_Engine_debugged)
             kout << CCA_TX;
 
         Radio::power(Power_Mode::LIGHT);

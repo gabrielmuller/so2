@@ -7,43 +7,45 @@
 
 #include <machine/ic.h>
 #include <machine/gpio.h>
-#include <utility/observer.h>
 
 __BEGIN_SYS
 
-class GPIO: public GPIO_Common, private Machine_Model, public Observed
+class GPIO: public GPIO_Common, private Machine_Model
 {
     friend class PWM;
-
 private:
     static const bool supports_power_up = Machine_Model::supports_gpio_power_up;
 
 public:
-    typedef _UTIL::Observed Observed;
-    typedef _UTIL::Observer Observer;
-
-public:
-    GPIO(char port, unsigned int pin, const Direction & dir, const Pull & p = UP, const Edge & int_edge = NONE)
-    : _port(port), _pin(pin), _pin_bit(1 << pin), _data(&gpio(_port, _pin_bit << 2)) {
-        assert(port < GPIO_PORTS);
+    GPIO(char port, unsigned int pin, const Direction & dir, const Pull & p = UP, const IC::Interrupt_Handler & handler = 0, const Edge & int_edge = RISING)
+    : _port(port - 'A'), _pin(pin), _pin_bit(1 << pin), _data(&gpio(_port, _pin_bit << 2)), _handler(handler) {
+        assert((port >= 'A') && (port <= 'A' + GPIO_PORTS));
         gpio(_port, AFSEL) &= ~_pin_bit; // Set pin as software controlled
         direction(dir);
         pull(p);
         clear_interrupt();
-        if(int_edge != NONE) {
+        if(_handler) {
             _devices[_port][_pin] = this;
             int_enable(int_edge);
         }
     }
 
     ~GPIO() {
-        int_disable();
+        if(_handler)
+            int_disable();
         _devices[_port][_pin] = 0;
     }
 
     bool get() const {
         assert(_direction == IN || _direction == INOUT);
         return *_data;
+    }
+
+    void handler(const IC::Interrupt_Handler & handler, const Edge & int_edge = RISING) {
+        int_disable();
+        _handler = handler;
+        _devices[_port][_pin] = this;
+        int_enable(int_edge);
     }
 
     void set(bool value = true) {
@@ -98,14 +100,15 @@ private:
         gpio(_port, IRQ_DETECT_ACK) &= ~(_pin_bit << (8 * _port));
     }
 
-    static void int_handler(const IC::Interrupt_Id & i);
+    static void handle_int(const IC::Interrupt_Id & i);
 
 private:
-    Port _port;
-    Pin _pin;
+    unsigned char _port;
+    unsigned char _pin;
     unsigned int _pin_bit;
     Direction _direction;
     volatile Reg32 * _data;
+    IC::Interrupt_Handler _handler;
 
     static GPIO * _devices[GPIO_PORTS][8];
     static unsigned char _mis[GPIO_PORTS];

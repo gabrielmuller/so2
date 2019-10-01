@@ -10,19 +10,21 @@ __BEGIN_UTIL
 namespace Convert
 {
 
-template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
-inline Count s2count(const Count f, const Time & t) { return static_cast<Temporary>(t) * f / 1; }
-template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
-inline Count ms2count(const Count f, const Time & t) { return static_cast<Temporary>(t) * f / 1000; }
-template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
-inline Count us2count(const Count f, const Time & t) { return static_cast<Temporary>(t) * f / 1000000; }
+    template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
+    inline Count s2count(const Count & frequency, const Time & time) { return static_cast<Temporary>(time) * frequency / 1; }
+    template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
+    inline Count ms2count(const Count & frequency, const Time & time) { return static_cast<Temporary>(time) * frequency / 1000; }
+    template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
+    inline Count us2count(const Count & frequency, const Time & time) { return static_cast<Temporary>(time) * frequency / 1000000; }
+    template<typename Count, typename Temporary = typename LARGER<Count>::Result>
+    inline Count percent2count(const Percent & duty_cycle, const Count & period) { return period - (static_cast<Temporary>(period) * int(duty_cycle) / 100); }
 
-template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
-inline Time count2s(const Count f, const Count & c) { return static_cast<Temporary>(c) * 1 / f; }
-template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
-inline Time count2ms(const Count f, const Count & c) { return static_cast<Temporary>(c) * 1000 / f; }
-template<typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
-inline Time count2us(const Count f, const Count & c) { return static_cast<Temporary>(c) * 1000000 / f; }
+    template<typename Hertz, typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
+    inline Time count2s(const Hertz & frequency, const Count & count) { return static_cast<Temporary>(count) * 1 / frequency; }
+    template<typename Hertz, typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
+    inline Time count2ms(const Hertz & frequency, const Count & count) { return static_cast<Temporary>(count) * 1000 / frequency; }
+    template<typename Hertz, typename Count, typename Time, typename Temporary = typename LARGER<Time>::Result>
+    inline Time count2us(const Hertz & frequency, const Count & count) { return static_cast<Temporary>(count) * 1000000 / frequency; }
 
 };
 

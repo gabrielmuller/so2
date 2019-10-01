@@ -1,13 +1,15 @@
 // EPOS PC Scratchpad Memory Mediator Declarations
 
-#include <machine/scratchpad.h>
-
 #ifndef __pc_scratchpad_h
 #define __pc_scratchpad_h
 
+#define __common_only__
+#include <machine/scratchpad.h>
+#undef __common_only__
+
 __BEGIN_SYS
 
-class Scratchpad: public Scratchpad_Common
+class Scratchpad: public Scratchpad_Base
 {
     friend class Machine;
 

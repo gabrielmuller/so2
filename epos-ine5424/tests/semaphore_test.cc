@@ -78,14 +78,14 @@ int philosopher(int n, int l, int c)
 
         table.lock();
         Display::position(l, c);
-        cout << "thinking[" << Machine::cpu_id() << "]";
+        cout << "thinking[" << CPU::id() << "]";
         table.unlock();
 
         Delay thinking(1000000);
 
         table.lock();
         Display::position(l, c);
-        cout << "  hungry[" << Machine::cpu_id() << "]";
+        cout << "  hungry[" << CPU::id() << "]";
         table.unlock();
 
         chopstick[first]->p();   // get first chopstick
@@ -93,14 +93,14 @@ int philosopher(int n, int l, int c)
 
         table.lock();
         Display::position(l, c);
-        cout << " eating[" << Machine::cpu_id() << "] ";
+        cout << " eating[" << CPU::id() << "] ";
         table.unlock();
 
         Delay eating(500000);
 
         table.lock();
         Display::position(l, c);
-        cout << "    sate[" << Machine::cpu_id() << "]";
+        cout << "    sate[" << CPU::id() << "]";
         table.unlock();
 
         chopstick[first]->v();   // release first chopstick
@@ -109,7 +109,7 @@ int philosopher(int n, int l, int c)
 
     table.lock();
     Display::position(l, c);
-    cout << "  done[" << Machine::cpu_id() << "]  ";
+    cout << "  done[" << CPU::id() << "]  ";
     table.unlock();
 
     return iterations;

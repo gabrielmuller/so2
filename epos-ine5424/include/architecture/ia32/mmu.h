@@ -3,12 +3,14 @@
 #ifndef __ia32_mmu_h
 #define __ia32_mmu_h
 
+#include <architecture/cpu.h>
+#define __common_only__
+#include <architecture/mmu.h>
+#undef __common_only__
 #include <system/memory_map.h>
 #include <utility/string.h>
 #include <utility/list.h>
 #include <utility/debug.h>
-#include <architecture/cpu.h>
-#include <architecture/mmu.h>
 
 __BEGIN_SYS
 

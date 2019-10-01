@@ -25,14 +25,6 @@ void Machine::init()
     if(Traits<USB>::enabled)
         USB::init();
 #endif
-    if(Traits<Ethernet>::enabled)
-        Initializer<Ethernet>::init();
-
-    if(Traits<IEEE802_15_4>::enabled)
-        Initializer<IEEE802_15_4>::init();
-
-    if(Traits<Modem>::enabled)
-        Initializer<Modem>::init();
 }
 
 __END_SYS

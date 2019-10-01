@@ -47,7 +47,9 @@ public:
         L1D_TLB_REFILL                        = 0x05,
         INSTRUCTIONS_ARCHITECTURALLY_EXECUTED = 0x08,
         EXCEPTION_TAKEN                       = 0x09,
-        BRANCHES_ARCHITECTURALLY_EXECUTED     = 0x0C,
+        BRANCHES_ARCHITECTURALLY_EXECUTED     = 0x0c,
+        IMMEDIATE_BRANCH                      = 0X0d,
+        UNALIGNED_LOAD_STORE                  = 0X0f,
         MISPREDICTED_BRANCH                   = 0x10,
         CYCLE                                 = 0x11,
         PREDICTABLE_BRANCH_EXECUTED           = 0x12,
@@ -58,9 +60,11 @@ public:
         L2D_REFILL                            = 0x17,
         L2D_WRITEBACK                         = 0x18,
         BUS_ACCESS                            = 0x19,
-        LOCAL_MEMORY_ERROR                    = 0x1A,
-        INSTRUCTION_SPECULATIVELY_EXECUTED    = 0x1B,
-        BUS_CYCLE                             = 0x1D,
+        LOCAL_MEMORY_ERROR                    = 0x1a,
+        INSTRUCTION_SPECULATIVELY_EXECUTED    = 0x1b,
+        BUS_CYCLE                             = 0x1c,
+        CHAIN                                 = 0x1d,
+
         // Cortex-A specific events
         JAVA_BYTECODE_EXECUTE                 = 0x40,
         SOFTWARE_JAVA_BYTECODE_EXECUTED       = 0x41,
@@ -89,8 +93,8 @@ public:
         PROCESSOR_STALL_IUTLB_MISS            = 0x84,
         PROCESSOR_STALL_DUTLB_MISS            = 0x85,
         PROCESSOR_STALL_DMB                   = 0x86,
-        INTEGER_CLOCK_ENABLED                 = 0x8A,
-        DATA_ENGINE_CLOCK_ENABLED             = 0x8B,
+        INTEGER_CLOCK_ENABLED                 = 0x8a,
+        DATA_ENGINE_CLOCK_ENABLED             = 0x8b,
         ISB_INSTRUCTIONS                      = 0x90,
         DSB_INSTRUCTIONS                      = 0x91,
         DMB_INSTRUCTIONS                      = 0x92,
@@ -170,12 +174,12 @@ private:
 };
 
 
-class PMU: private IF<Traits<Build>::MACHINE == Traits<Build>::Cortex_A, ARMv7_A_PMU, ARMv7_A_PMU>::Result
+class PMU: private ARMv7_A_PMU
 {
     friend class CPU;
 
 private:
-    typedef IF<Traits<Build>::MACHINE == Traits<Build>::Cortex_A, ARMv7_A_PMU, ARMv7_A_PMU>::Result Engine;
+    typedef ARMv7_A_PMU Engine;
 
 public:
     using Engine::CHANNELS;

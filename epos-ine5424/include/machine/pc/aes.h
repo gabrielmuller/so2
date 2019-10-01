@@ -12,7 +12,7 @@
 __BEGIN_SYS
 
 template<unsigned int KEY_SIZE>
-class _AES: private AES_Common, public _UTIL::_AES<KEY_SIZE> {};
+class _AES: public _UTIL::_AES<KEY_SIZE> {};
 
 __END_SYS
 

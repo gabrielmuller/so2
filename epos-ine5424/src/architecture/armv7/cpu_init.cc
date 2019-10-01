@@ -11,21 +11,22 @@ void CPU::init()
 {
     db<Init, CPU>(TRC) << "CPU::init()" << endl;
 
-    if(Machine::cpu_id() == 0) {
+    if(CPU::id() == 0) {
         if(Traits<MMU>::enabled)
             MMU::init();
         else
             db<Init, MMU>(WRN) << "MMU is disabled!" << endl;
     }
 
-    // Initialize the PMU
-#ifdef __mmod_zynq__
+#ifdef __PMU_H
     if(Traits<PMU>::enabled)
         PMU::init();
 #endif
 
+#ifdef __TSC_H
     if(Traits<TSC>::enabled)
         TSC::init();
+#endif
 }
 
 __END_SYS

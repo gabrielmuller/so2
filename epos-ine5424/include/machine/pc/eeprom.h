@@ -16,10 +16,10 @@ public:
 public:
     EEPROM() {};
 
+    int size() const { return cmos_size(); }
+
     unsigned char read(const Address & a) { return cmos_read(a); }
     void write(const Address & a, unsigned char d) { cmos_write(a, d); }
-
-    int size() const { return cmos_size(); }
 };
 
 __END_SYS

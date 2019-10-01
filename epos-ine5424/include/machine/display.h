@@ -5,11 +5,11 @@
 
 #include <system/config.h>
 
-#ifdef __UART_H
+#if defined(__UART_H) && !defined(__common_only__)
 #include __UART_H
 #endif
 
-#ifdef __USB_H
+#if defined(__USB_H) && !defined(__common_only__)
 #include __USB_H
 #endif
 
@@ -19,6 +19,16 @@ class Display_Common
 {
 protected:
     Display_Common() {}
+
+public:
+    static void putc(char c);
+    static void puts(const char * s);
+
+    static void clear();
+
+    static void geometry(int * lines, int * columns);
+    static void position(int * line, int * column);
+    static void position(int line, int column);
 };
 
 class Serial_Display: public Display_Common
@@ -28,11 +38,11 @@ class Serial_Display: public Display_Common
     friend class Machine;
 
 private:
+    typedef IF<Traits<Serial_Display>::ENGINE == Traits<Serial_Display>::UART, UART, USB>::Result Engine;
+    static const int UNIT = Traits<Serial_Display>::UNIT;
     static const int LINES = Traits<Serial_Display>::LINES;
     static const int COLUMNS = Traits<Serial_Display>::COLUMNS;
     static const int TAB_SIZE = Traits<Serial_Display>::TAB_SIZE;
-
-    typedef IF<Traits<Serial_Display>::ENGINE == Traits<Serial_Display>::UART, UART, USB>::Result Engine;
 
     // Special characters
     enum {
@@ -145,12 +155,15 @@ private:
 
 __END_SYS
 
-#ifdef __DISPLAY_H
-#include __DISPLAY_H
-#else
+// If the machine does not feature a Keyboard, then use the serial console
+#ifndef __DISPLAY_H
 __BEGIN_SYS
 class Display: public IF<Traits<Serial_Display>::enabled, Serial_Display, Dummy>::Result {};
 __END_SYS
 #endif
 
+#endif
+
+#if defined(__DISPLAY_H) && !defined(__common_only__)
+#include __DISPLAY_H
 #endif

@@ -3,7 +3,7 @@
 #ifndef __machine_h
 #define __machine_h
 
-#include <machine/main.h>
+#include <machine/machine.h>
 #include <machine/ic.h>
 #include <machine/timer.h>
 #include <machine/rtc.h>

@@ -538,7 +538,7 @@ void PC_Setup::say_hi()
         kout << si->bm.node_id << " (" << Traits<Build>::NODES << ")" << endl;
     else
         kout << "will get from the network!" << endl;
-    kout << "  Space:        ";
+    kout << "  Space:      ";
     if(si->bm.space_x != -1)
         kout << "(" << si->bm.space_x << "," << si->bm.space_y << "," << si->bm.space_z << ")" << endl;
     else
@@ -1178,18 +1178,8 @@ void _start()
 
 void setup(char * bi)
 {
-    if(!Traits<System>::multicore || (APIC::id() == 0)) {
-        kerr  << endl;
-        kout  << endl;
-    }
-
-    // Multicore sanity check
-    if(!Traits<System>::multicore && (APIC::id() != 0)) {
-        db<Setup>(WRN) << "Multicore disable by config, halting this CPU (" << APIC::id() << ")!" << endl;
-
-        CPU::int_disable();
-        CPU::halt();
-    }
+    kerr  << endl;
+    kout  << endl;
 
     PC_Setup pc_setup(bi);
 }

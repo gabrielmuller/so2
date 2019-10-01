@@ -476,8 +476,8 @@ public:
 
 __END_SYS
 
-#ifdef __USB_H
-#include __USB_H
 #endif
 
+#if defined(__USB_H) && !defined(__common_only__)
+#include __USB_H
 #endif

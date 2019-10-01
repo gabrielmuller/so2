@@ -40,7 +40,7 @@ template<> struct Traits<TSC>: public Traits<void>
 
 template<> struct Traits<PMU>: public Traits<void>
 {
-    static const bool enabled = (Traits<Build>::MODEL == Traits<Build>::Zynq);
+    static const bool enabled = (Traits<Build>::MODEL == Traits<Build>::Raspberry_Pi3);
 };
 
 __END_SYS

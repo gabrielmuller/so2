@@ -7,7 +7,7 @@
 #include <machine/ic.h>
 #include <machine/rtc.h>
 #include <machine/timer.h>
-#include <machine/main.h>
+#include <machine/common.h>
 #include __MODEL_H
 
 __BEGIN_SYS

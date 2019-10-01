@@ -4,7 +4,7 @@
 #if !defined(__cortex_m_adc_h_) && defined(__ADC_H)
 #define __cortex_m_adc_h_
 
-#include <machine/main.h>
+#include <machine/common.h>
 #include <machine/adc.h>
 
 __BEGIN_SYS
@@ -44,7 +44,6 @@ public:
         BITS_12 = 3  // 12 bits resolution, 512 decimation rate
     };
 
-public:
     ADC(const Channel & channel = SINGLE_ENDED_ADC5, const Reference & reference = SYSTEM_REF, const Resolution & resolution = BITS_12)
     : _channel(channel), _reference(reference), _resolution(resolution) {
         Machine_Model::adc_config(_channel);

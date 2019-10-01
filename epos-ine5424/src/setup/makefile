@@ -2,18 +2,18 @@
 
 include ../../makedefs
 
-TARGET := $(if $(shell find $(MACH)* 2> /dev/null), $(if $(SETUP_ADDR), install, install.o))
+TARGET := $(if $(shell find setup_$(MMOD)* 2> /dev/null), $(if $(SETUP_ADDR), install, install.o))
 
 all:	$(TARGET)
 
-$(MACH)_setup:	$(MACH)_setup.o
+setup_$(MMOD):	setup_$(MMOD).o
 		$(LD) $(LDFLAGS) -L$(CCLIB) --omagic --section-start .init=$(SETUP_ADDR) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
 
-install:	$(MACH)_setup
+install:	setup_$(MMOD)
 		$(INSTALL) $< $(IMG)
 
-install.o:	$(MACH)_setup.o
+install.o:	setup_$(MMOD).o
 		$(INSTALL) $< $(LIB)
 
 clean:
-		$(CLEAN) *.o *.s *_setup
+		$(CLEAN) *.o $(shell find -maxdepth 1 -executable -not -type d)

@@ -21,8 +21,8 @@ public:
 
 __END_SYS
 
-#ifdef __I2C_H
-#include __I2C_H
 #endif
 
+#if defined(__I2C_H) && !defined(__common_only__)
+#include __I2C_H
 #endif

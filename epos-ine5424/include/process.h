@@ -4,10 +4,10 @@
 #define __process_h
 
 #include <architecture.h>
+#include <machine.h>
 #include <utility/queue.h>
 #include <utility/handler.h>
 #include <utility/scheduler.h>
-#include <machine/timer.h>
 #include <memory.h>
 
 extern "C" { void __exit(); }

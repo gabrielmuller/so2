@@ -114,25 +114,23 @@ void Thread::priority(const Criterion & c)
 
     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
-    // unsigned int old_cpu = _link.rank().queue();
+    unsigned int old_cpu = _link.rank().queue();
+
+    _link.rank(c);
 
     if(_state != RUNNING) { // reorder the scheduling queue
         _scheduler.remove(this);
-        _link.rank(c);
         _scheduler.insert(this);
-
-    } else {
-        _link.rank(c);
     }
+
     if(preemptive) {
-        // reschedule(old_cpu);
+        reschedule(old_cpu);
         if(smp) {
             lock();
             reschedule(_link.rank().queue());
         }
-    }
-
-    unlock();
+    } else
+        unlock();
 }
 
 
@@ -337,11 +335,11 @@ void Thread::reschedule()
 
 void Thread::reschedule(unsigned int cpu)
 {
-    if(!smp || (cpu == Machine::cpu_id()))
+    if(!smp || (cpu == CPU::id()))
         reschedule();
     else {
         db<Thread>(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
-        IC::ipi_send(cpu, IC::INT_RESCHEDULER);
+        IC::ipi(cpu, IC::INT_RESCHEDULER);
         unlock();
     }
 }
@@ -404,11 +402,11 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 
 int Thread::idle()
 {
-    db<Thread>(TRC) << "Thread::idle(cpu=" << Machine::cpu_id() << ",this=" << running() << ")" << endl;
+    db<Thread>(TRC) << "Thread::idle(cpu=" << CPU::id() << ",this=" << running() << ")" << endl;
 
-    while(_thread_count > Machine::n_cpus()) { // someone else besides idles
+    while(_thread_count > CPU::cores()) { // someone else besides idles
         if(Traits<Thread>::trace_idle)
-            db<Thread>(TRC) << "Thread::idle(cpu=" << Machine::cpu_id() << ",this=" << running() << ")" << endl;
+            db<Thread>(TRC) << "Thread::idle(cpu=" << CPU::id() << ",this=" << running() << ")" << endl;
 
         if(monitored)
             Monitor::run();
@@ -421,7 +419,7 @@ int Thread::idle()
     }
 
     CPU::int_disable();
-    if(Machine::cpu_id() == 0) {
+    if(CPU::id() == 0) {
         if(monitored)
             Monitor::process_batch();
 
@@ -447,6 +445,6 @@ __END_SYS
 __BEGIN_UTIL
 unsigned int This_Thread::id()
 {
-    return _not_booting ? reinterpret_cast<volatile unsigned int>(Thread::self()) : Machine::cpu_id() + 1;
+    return _not_booting ? reinterpret_cast<volatile unsigned int>(Thread::self()) : CPU::id() + 1;
 }
 __END_UTIL

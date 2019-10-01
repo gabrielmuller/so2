@@ -57,7 +57,7 @@ if(thumb)
         "       pop     {r12}                   \n");   // pop flags into tmp register
     msr12();                                            // restore flags
     ASM("       pop     {r0-r12, lr}            \n");   // restore all registers
-    if(Traits<Build>::MACHINE == Traits<Build>::Cortex_M)
+    if((Traits<Build>::MODEL == Traits<Build>::eMote3) || (Traits<Build>::MODEL == Traits<Build>::LM3S811))
         int_enable();
     ASM("       pop     {pc}                    \n"     // restore PC
         ".ret:  bx      lr                      \n");   // return

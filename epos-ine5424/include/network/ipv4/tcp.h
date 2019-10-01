@@ -3,15 +3,16 @@
 #ifndef __tcp_h
 #define __tcp_h
 
+#include <network/ipv4/ip.h>
+
+#ifdef __ipv4__
+
+#include <network/ipv4/icmp.h>
+#include <network/ipv4/udp.h> // TCP::Address == UDP_Address
 #include <utility/handler.h>
 #include <utility/random.h>
 #include <time.h>
 #include <synchronizer.h>
-#include <network/ipv4/icmp.h>
-#include <network/ipv4/ip.h>
-#include <network/ipv4/udp.h> // TCP::Address == UDP_Address
-
-#ifdef __ipv4__
 
 __BEGIN_SYS
 

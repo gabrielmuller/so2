@@ -3,12 +3,14 @@
 #ifndef __arp_h
 #define __arp_h
 
+#include <system/config.h>
+
+#ifdef __ipv4__
+
 #include <utility/hash.h>
 #include <utility/spin.h>
 #include <time.h>
 #include <synchronizer.h>
-
-#ifdef __ipv4__
 
 __BEGIN_SYS
 

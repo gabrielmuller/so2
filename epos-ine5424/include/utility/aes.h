@@ -4,13 +4,16 @@
 #define __util_aes_h
 
 #include <utility/string.h>
+#define __common_only__
+#include <machine/aes.h>
+#undef __common_only__
 
 __BEGIN_UTIL
 
 // EPOS 128-bit Advanced Encryption Standard (AES) Software Implementation
 // Adapted from https://github.com/kokke/tiny-AES128-C
 template<>
-class _AES<16>
+class _AES<16>: public AES_Common
 {
 private:
     static const unsigned int Nb = 4; // number of columns comprising a _state
@@ -21,11 +24,6 @@ private:
 
 public:
     static const unsigned int KEY_SIZE = 16;
-
-    enum Mode {
-        ECB,
-        CBC,
-    };
 
 public:
     _AES(const Mode & m = ECB): _mode(m) {

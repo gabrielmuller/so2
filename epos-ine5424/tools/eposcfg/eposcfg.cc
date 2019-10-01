@@ -295,9 +295,7 @@ void populate_strings()
     case Traits<Build>::RCX:            set_token_value("MACH", "rcx");              break;
     case Traits<Build>::Leon:           set_token_value("MACH", "leon");             break;
     case Traits<Build>::Virtex:         set_token_value("MACH", "virtex");           break;
-    case Traits<Build>::Cortex_M:       set_token_value("MACH", "cortex_m");         break;
-    case Traits<Build>::Cortex_R:       set_token_value("MACH", "cortex_r");         break;
-    case Traits<Build>::Cortex_A:       set_token_value("MACH", "cortex_a");         break;
+    case Traits<Build>::Cortex:         set_token_value("MACH", "cortex");         break;
     default:                            set_token_value("MACH", "unsuported");       break;
     }
 
@@ -305,7 +303,7 @@ void populate_strings()
     case Traits<Build>::Unique:         set_token_value("MMOD", "unique");             break;
     case Traits<Build>::Legacy_PC:      set_token_value("MMOD", "legacy_pc");          break;
     case Traits<Build>::eMote3:         set_token_value("MMOD", "emote3");             break;
-    case Traits<Build>::LM3S811:        set_token_value("MMOD", "lm3S811");            break;
+    case Traits<Build>::LM3S811:        set_token_value("MMOD", "lm3s811");            break;
     case Traits<Build>::Zynq:           set_token_value("MMOD", "zynq");               break;
     case Traits<Build>::Realview_PBX:   set_token_value("MMOD", "realview_pbx");       break;
     default:                            set_token_value("MMOD", "unsuported");         break;

@@ -4,7 +4,7 @@
 #define __nic_h
 
 #include <utility/string.h>
-#include <architecture.h>
+#include <architecture/tsc.h>
 #include <machine/rtc.h>
 
 __BEGIN_SYS
@@ -250,8 +250,8 @@ public:
 
 __END_SYS
 
-#if defined (__NIC_H) && !defined(__no_mediator__)
-#include __NIC_H
 #endif
 
+#if defined (__NIC_H) && !defined(__common_only__)
+#include __NIC_H
 #endif

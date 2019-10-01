@@ -66,15 +66,8 @@ public:
     };
 };
 
-__END_SYS
-
-#ifdef __RTC_H
-#include __RTC_H
-#else
-
-__BEGIN_SYS
-
-// If the platform does not feaure a RTC, define seconds_since_epoch to be 0
+// If the machine does not feature a RTC, define seconds_since_epoch to be 0
+#ifndef __RTC_H
 class RTC: public RTC_Common
 {
 public:
@@ -85,9 +78,12 @@ public:
 
     static Second seconds_since_epoch() { return 0; }
 };
+#endif
 
 __END_SYS
 
 #endif
 
+#if defined(__RTC_H) && !defined(__common_only__)
+#include __RTC_H
 #endif

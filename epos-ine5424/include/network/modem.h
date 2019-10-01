@@ -7,9 +7,9 @@
 #include <utility/list.h>
 #include <utility/observer.h>
 #include <utility/buffer.h>
-#define __no_mediator__
+#define __common_only__
 #include <machine/nic.h>
-#undef __no_mediator__
+#undef __common_only__
 
 __BEGIN_SYS
 

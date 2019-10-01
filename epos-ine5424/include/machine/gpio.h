@@ -52,8 +52,9 @@ public:
 
 __END_SYS
 
-#ifdef __GPIO_H
+#endif
+
+#if defined(__GPIO_H) && !defined(__common_only__)
 #include __GPIO_H
 #endif
 
-#endif

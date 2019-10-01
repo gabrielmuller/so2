@@ -18,12 +18,11 @@ private:
     static const unsigned int ACCURACY = 40000; // ppb
 
     enum {
-        TSC_BASE =
-            Traits<Build>::MODEL == Traits<Build>::eMote3  ?      0x40033000 : // TIMER3_BASE
-            Traits<Build>::MODEL == Traits<Build>::LM3S811 ?      0x40031000 : // TIMER1_BASE
-            Traits<Build>::MODEL == Traits<Build>::Zynq ?         0xf8f00200 : // GLOBAL_TIMER_BASE
-            Traits<Build>::MODEL == Traits<Build>::Realview_PBX ? 0x1f000200 : // GLOBAL_TIMER_BASE
-            0
+        TSC_BASE = Traits<Build>::MODEL == Traits<Build>::eMote3  ?      0x40033000 // TIMER3_BASE
+                 : Traits<Build>::MODEL == Traits<Build>::LM3S811 ?      0x40031000 // TIMER1_BASE
+                 : Traits<Build>::MODEL == Traits<Build>::Zynq ?         0xf8f00200 // GLOBAL_TIMER_BASE
+                 : Traits<Build>::MODEL == Traits<Build>::Realview_PBX ? 0x1f000200 // GLOBAL_TIMER_BASE
+                 : 0
     };
 
     // Cortex-M3 GPTM registers offsets
@@ -55,7 +54,7 @@ public:
 
     static Time_Stamp time_stamp() {
 
-#ifdef __mach_cortex_a__
+#ifdef __cortex_a__
 
         if(sizeof(Time_Stamp) == sizeof(CPU::Reg32))
             return reg(GTCTRL);
@@ -71,7 +70,7 @@ public:
         return (high << 32) | low;
 
 #endif
-#ifdef __mach_cortex_m__
+#ifdef __cortex_m__
 
         return (_overflow << 32) + reg(GPTMTAR); // Not supported by LM3S811 on QEMU (version 2.7.50)
 

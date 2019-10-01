@@ -4,11 +4,9 @@
 #define __time_h
 
 #include <architecture.h>
+#include <machine.h>
 #include <utility/queue.h>
 #include <utility/handler.h>
-#include <machine/rtc.h>
-#include <machine/ic.h>
-#include <machine/timer.h>
 
 __BEGIN_SYS
 

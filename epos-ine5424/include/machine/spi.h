@@ -15,8 +15,8 @@ protected:
 
 __END_SYS
 
-#ifdef __SPI_H
-#include __SPI_H
 #endif
 
+#if defined(__SPI_H) && !defined(__common_only__)
+#include __SPI_H
 #endif

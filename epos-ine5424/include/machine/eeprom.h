@@ -9,17 +9,23 @@ __BEGIN_SYS
 
 class EEPROM_Common
 {
+public:
+    typedef unsigned int Address;
+
 protected:
     EEPROM_Common() {}
 
 public:
-    typedef unsigned int Address;
+    int size();
+
+    unsigned char read(const Address & a);
+    void write(const Address & a, unsigned char d);
 };
 
 __END_SYS
 
-#ifdef __EEPROM_H
-#include __EEPROM_H
 #endif
 
+#if defined(__EEPROM_H) && !defined(__common_only__)
+#include __EEPROM_H
 #endif

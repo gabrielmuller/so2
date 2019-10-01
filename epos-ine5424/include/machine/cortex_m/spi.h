@@ -5,7 +5,7 @@
 #if !defined(__cortex_m_spi_h__) && defined(__SPI_H)
 #define __cortex_m_spi_h__
 
-#include <machine/main.h>
+#include <machine/common.h>
 #include <machine/spi.h>
 
 __BEGIN_SYS

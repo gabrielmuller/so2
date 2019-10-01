@@ -158,7 +158,7 @@ class Dummy_Transducer;
 class Pluviometer;
 class Keller_46X;
 
-// Components
+// API Components
 class System;
 class Application;
 

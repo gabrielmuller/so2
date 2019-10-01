@@ -491,7 +491,7 @@ inline void PCNet32::Timer::adjust(const PCNet32::Timer::Offset & o) { TSC::time
 inline PCNet32::Timer::Hertz PCNet32::Timer::frequency() { return TSC::frequency(); }
 inline PCNet32::Timer::PPB PCNet32::Timer::accuracy() { return TSC::accuracy(); }
 inline PCNet32::Timer::Time_Stamp PCNet32::Timer::us2count(const PCNet32::Timer::Microsecond & us) { return Convert::us2count<Time_Stamp, Microsecond>(TSC::frequency(), us); }
-inline PCNet32::Timer::Microsecond PCNet32::Timer::count2us(const PCNet32::Timer::Time_Stamp & ts) { return Convert::count2us<Time_Stamp, Microsecond>(TSC::frequency(), ts); }
+inline PCNet32::Timer::Microsecond PCNet32::Timer::count2us(const PCNet32::Timer::Time_Stamp & ts) { return Convert::count2us<Hertz, Time_Stamp, Microsecond>(TSC::frequency(), ts); }
 //    static Time_Stamp sfd() { return 0; }
 
 __END_SYS

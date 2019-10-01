@@ -3,7 +3,7 @@
 #ifndef __pc_timer_h
 #define __pc_timer_h
 
-#include <machine/main.h>
+#include <machine/machine.h>
 #include <machine/ic.h>
 #include <machine/rtc.h>
 #include <machine/timer.h>
@@ -284,13 +284,13 @@ public:
     Hertz frequency() const { return (FREQUENCY / _initial); }
     void frequency(const Hertz & f) { _initial = FREQUENCY / f; reset(); }
 
-    Tick read() { return _current[Machine::cpu_id()]; }
+    Tick read() { return _current[CPU::id()]; }
 
     int reset() {
-        db<Timer>(TRC) << "Timer::reset() => {f=" << frequency() << ",h=" << reinterpret_cast<void*>(_handler) << ",count=" << _current[Machine::cpu_id()] << "}" << endl;
+        db<Timer>(TRC) << "Timer::reset() => {f=" << frequency() << ",h=" << reinterpret_cast<void*>(_handler) << ",count=" << _current[CPU::id()] << "}" << endl;
 
-        int percentage = _current[Machine::cpu_id()] * 100 / _initial;
-        _current[Machine::cpu_id()] = _initial;
+        int percentage = _current[CPU::id()] * 100 / _initial;
+        _current[CPU::id()] = _initial;
 
         return percentage;
     }

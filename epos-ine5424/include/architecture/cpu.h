@@ -75,6 +75,9 @@ public:
     class Context;
 
 public:
+    static unsigned int id();
+    static unsigned int cores();
+
     static void halt() { for(;;); }
 
     static bool tsl(volatile bool & lock) {
@@ -101,6 +104,23 @@ public:
             value = replacement;
         }
         return old;
+    }
+
+    template <int (* finc)(volatile int &)>
+    static void smp_barrier(unsigned int cores, unsigned int id) {
+        static volatile int ready[2];
+        static volatile int i;
+
+        int j = i;
+
+        finc(ready[j]);
+        if(id == 0) {
+            while(ready[j] < int(cores));    // wait for all CPUs to be ready
+            i = !i;                     // toggle ready
+            ready[j] = 0;               // signalizes waiting CPUs
+        } else {
+            while(ready[j]);            // wait for CPU[0] signal
+        }
     }
 
     static Reg64 htole64(Reg64 v) { return (BIG_ENDIAN) ? swap64(v) : v; }
@@ -151,8 +171,8 @@ inline T align128(const T & addr) { return (addr + 15) & ~15U; }
 
 __END_SYS
 
-#ifdef __CPU_H
-#include __CPU_H
 #endif
 
+#if defined(__CPU_H) && !defined(__common_only__)
+#include __CPU_H
 #endif

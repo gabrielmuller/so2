@@ -251,8 +251,8 @@ public:
 
 __END_SYS
 
-#ifdef __PCI_H
-#include __PCI_H
 #endif
 
+#if defined(__PCI_H) && !defined(__common_only__)
+#include __PCI_H
 #endif

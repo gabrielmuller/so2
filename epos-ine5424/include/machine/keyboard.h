@@ -41,12 +41,15 @@ private:
 
 __END_SYS
 
-#ifdef __KEYBOARD_H
-#include __KEYBOARD_H
-#else
+// If the machine does not feature a Keyboard, then use the serial console
+#ifndef __KEYBOARD_H
 __BEGIN_SYS
 class Keyboard: public IF<Traits<Serial_Keyboard>::enabled, Serial_Keyboard, Dummy>::Result {};
 __END_SYS
 #endif
 
+#endif
+
+#if defined(__KEYBOARD_H) && !defined(__common_only__)
+#include __KEYBOARD_H
 #endif

@@ -1,6 +1,6 @@
 // EPOS Cortex-M IC Mediator Implementation
 
-#include <machine/main.h>
+#include <machine/common.h>
 #include <machine/cortex_m/ic.h>
 
 extern "C" { void _int_entry() __attribute__ ((alias("_ZN4EPOS1S2IC5entryEv"))); }

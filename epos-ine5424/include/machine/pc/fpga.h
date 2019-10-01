@@ -93,9 +93,9 @@ public:
 
     static void reset() { return Engine::reset(); }
 
-private:
     static void int_handler(const IC::Interrupt_Id & interrupt);
 
+private:
     static void init();
 };
 

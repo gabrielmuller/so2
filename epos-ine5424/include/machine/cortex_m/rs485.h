@@ -44,35 +44,35 @@ public:
     : Engine(unit, baud_rate, data_bits, parity, stop_bits) {}
 
     void config(unsigned int baud_rate, unsigned int data_bits, unsigned int parity, unsigned int stop_bits) {
-        Engine::config(baud_rate, data_bits, parity, stop_bits);
+    	Engine::config(baud_rate, data_bits, parity, stop_bits);
     }
     void config(unsigned int * baud_rate, unsigned int * data_bits, unsigned int * parity, unsigned int * stop_bits) {
-        Engine::config(*baud_rate, *data_bits, *parity, *stop_bits);
+    	Engine::config(*baud_rate, *data_bits, *parity, *stop_bits);
     }
 
     int read(void * data, unsigned int size) {
-        char * d = reinterpret_cast<char *>(data);
-        unsigned int s = 0;
+    	char * d = reinterpret_cast<char *>(data);
+    	unsigned int s = 0;
 
-        for(; s < size; s++) {
-            if(ready_to_get())
-                d[s] = get();
-            else
-                break;
-        }
-        return s;
+    	for(; s < size; s++) {
+    		if(ready_to_get())
+    			d[s] = get();
+    		else
+    			break;
+    	}
+    	return s;
     }
     int write(const void * data, unsigned int size) {
-        const char * d = reinterpret_cast<const char *>(data);
-        unsigned int s = 0;
+    	const char * d = reinterpret_cast<const char *>(data);
+    	unsigned int s = 0;
 
-        Transceiver::out();
-        for(; s < size; s++)
-            put(d[s]);
-        Engine::flush();
-        Transceiver::in();
+    	Transceiver::out();
+    	for(; s < size; s++)
+    		put(d[s]);
+    	Engine::flush();
+    	Transceiver::in();
 
-        return s;
+    	return s;
     }
 
     using Engine::flush;

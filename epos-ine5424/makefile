@@ -65,7 +65,7 @@ test: $(subst .cc,_traits.h,$(TESTS_SOURCES))
 		$(INSTALL) $(subst .cc,_traits.h,$(TESTS_SOURCES)) $(APP)
 		$(foreach tst,$(UNFINISHED_TESTS),$(MAKETEST) APPLICATION=$(tst) prebuild_$(tst) clean1 all1 posbuild_$(tst) prerun_$(tst) run1 posbuild_$(tst);)
 		
-buildtests: $(subst .cc,_traits.h,$(TESTS_SOURCES))
+buildtest: $(subst .cc,_traits.h,$(TESTS_SOURCES))
 		$(INSTALL) $(TESTS_SOURCES) $(APP)
 		$(INSTALL) $(subst .cc,_traits.h,$(TESTS_SOURCES)) $(APP)
 		$(foreach tst,$(UNCOMPILED_TESTS),$(MAKETEST) APPLICATION=$(tst) prebuild_$(tst) clean1 all1 posbuild_$(tst);)

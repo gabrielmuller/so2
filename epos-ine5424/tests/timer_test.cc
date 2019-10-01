@@ -12,7 +12,7 @@ void handler(const IC::Interrupt_Id & i)
 
     int lin, col;
     Display::position(&lin, &col);
-    Display::position(0, 60 + Machine::cpu_id() * 2);
+    Display::position(0, 60 + CPU::id() * 2);
     Display::putc((elapsed++ % 10) + 48);
     Display::position(lin, col);
 }
