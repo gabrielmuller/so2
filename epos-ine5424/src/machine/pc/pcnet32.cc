@@ -201,10 +201,26 @@ void PCNet32::free(Buffer * buf)
 
 void PCNet32::reset()
 {
-    db<PCNet32>(TRC) << "PCNet32::reset()" << endl;
+
+    db<PCNet32>(WRN) << "RTL8139::reset()" << endl;
+
+    power_on();
+
+    db<PCNet32>(WRN) << "DMA Buffer is at phy " << _dma_buf->phy_address() << endl;
 
     // Reset the device
     s_reset();
+
+    // Initialize receive buffer
+    CPU::out32(_io_port + RBSTART, _dma_buf->phy_address());
+
+    // Configure interrupt mask to transmit and receive only
+    CPU::out32(_io_port + IMR, IMR_TOK & IMR_ROK);
+
+    db<PCNet32>(WRN) << "RTL8139::reset() finished" << endl;
+    db<PCNet32>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
+
+    return;
 
     // Software style => PCI, 32 bits, burst mode (pg 147)
     bcr(20, BCR20_SSIZE32 | BCR20_SWSTYLE2);

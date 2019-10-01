@@ -23,6 +23,26 @@ protected:
     typedef Ethernet::Address MAC_Address;
 
 public:
+    // RTL8139 registers
+    enum {
+        MAC0_5     = 0x00,
+        MAR0_7     = 0x08,
+        RBSTART    = 0x30,
+        CMD        = 0x37,
+        IMR        = 0x3C,
+        ISR        = 0x3E,
+        CONFIG_1   = 0x52
+    };
+
+    // RTL8139 values
+    enum {
+        POWER_ON   = 0x00,
+        RESET      = 0x10,
+
+        IMR_TOK    = 0x04,
+        IMR_ROK    = 0x01
+    };
+
     // Offsets from base I/O address
     enum {
         PROM       = 0x00, // 16 bytes EEPROM
@@ -320,12 +340,16 @@ public:
     Reg8 prom(int a) {
         return CPU::in8(_io_port + PROM + a);
     }
-    void s_reset() { // pg 96
-        // Assert S_RESET
-        CPU::in16(_io_port + WIO_RESET);
 
-        // Wait for STOP
-        for(int i = 0; (i < 100) && !(csr(CSC) & 0x0004); i++);
+    void power_on() {
+        CPU::out8(_io_port + CONFIG_1, POWER_ON);
+    }
+
+    void s_reset() {
+        CPU::out8(_io_port + CMD, RESET);
+
+        // Wait for RST bit to be low
+        while (CPU::in8(_io_port + CMD) & RESET) {}
     }
 
     Reg16 rap() volatile {
@@ -395,8 +419,8 @@ class PCNet32: public NIC<Ethernet>, private Am79C970A
 
 private:
     // PCI ID
-    static const unsigned int PCI_VENDOR_ID = 0x1022;
-    static const unsigned int PCI_DEVICE_ID = 0x2000;
+    static const unsigned int PCI_VENDOR_ID = 0x10EC;
+    static const unsigned int PCI_DEVICE_ID = 0x8139; // RTL8139
     static const unsigned int PCI_REG_IO = 0;
 
     // Mode
@@ -408,9 +432,7 @@ private:
     static const unsigned int RX_BUFS =Traits<PCNet32>::RECEIVE_BUFFERS;
 
     // Size of the DMA Buffer that will host the ring buffers and the init block
-    static const unsigned int DMA_BUFFER_SIZE = ((sizeof(Init_Block) + 15) & ~15U) +
-        RX_BUFS * ((sizeof(Rx_Desc) + 15) & ~15U) + TX_BUFS * ((sizeof(Tx_Desc) + 15) & ~15U) +
-        RX_BUFS * ((sizeof(Buffer) + 15) & ~15U) + TX_BUFS * ((sizeof(Buffer) + 15) & ~15U); // align128() cannot be used here
+    static const unsigned int DMA_BUFFER_SIZE = 0x400000;
 
     // Interrupt dispatching binding
     struct Device {

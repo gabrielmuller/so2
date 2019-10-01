@@ -16,6 +16,7 @@ PCNet32::PCNet32(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dm
     _irq = irq;
     _dma_buf = dma_buf;
 
+
     // Distribute the DMA_Buffer allocated by init()
     Log_Addr log = _dma_buf->log_address();
     Phy_Addr phy = _dma_buf->phy_address();
@@ -71,12 +72,10 @@ PCNet32::PCNet32(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dm
 
 void PCNet32::init(unsigned int unit)
 {
-    db<Init, PCNet32>(TRC) << "PCNet32::init(unit=" << unit << ")" << endl;
-
     // Scan the PCI bus for device
     PCI::Locator loc = PCI::scan(PCI_VENDOR_ID, PCI_DEVICE_ID, unit);
     if(!loc) {
-        db<Init, PCNet32>(WRN) << "PCNet32::init: PCI scan failed!" << endl;
+        db<Init, PCNet32>(WRN) << "RTL8139::init: PCI scan failed!" << endl;
         return;
     }
 
