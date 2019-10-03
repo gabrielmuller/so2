@@ -204,18 +204,51 @@ void PCNet32::reset()
 
     db<PCNet32>(WRN) << "RTL8139::reset()" << endl;
 
-    power_on();
+    // Power on the NIC
+    CPU::out8(_io_port + CONFIG_1, POWER_ON);
 
     db<PCNet32>(WRN) << "DMA Buffer is at phy " << _dma_buf->phy_address() << endl;
 
     // Reset the device
     s_reset();
 
-    // Initialize receive buffer
+    // Tell the NIC where the receive buffer starts
     CPU::out32(_io_port + RBSTART, _dma_buf->phy_address());
 
-    // Configure interrupt mask to transmit and receive only
-    CPU::out32(_io_port + IMR, IMR_TOK & IMR_ROK);
+    // Configure interrupt mask to transmit OK and receive OK events
+    CPU::out32(_io_port + IMR, TOK | ROK);
+    CPU::out32(_io_port + ISR, TOK | ROK);
+
+    // Configure which packets should be received, don't wrap around buffer
+    CPU::out32(_io_port + RCR, ACCEPT_ANY | WRAP);
+
+    // Receive enable & transmit enable
+    CPU::out8(_io_port  + CMD, TE | RE);
+
+    // Test transmit of a single frame.
+    Log_Addr log = _dma_buf->log_address();
+    Phy_Addr phy = _dma_buf->phy_address();
+
+    log += 0x10000;
+    phy += 0x10000;
+
+    char msg[] = "Hello world! This is the payload of an ethernet frame.\n";
+
+    new (log) Frame(0xffffff, 0xffffff, 0x0800, msg, sizeof(msg));
+    unsigned short status = sizeof(Frame) & 0xfff;
+
+    db<PCNet32>(WRN) << "log[0] " << ((unsigned int*) log)[0] << endl;
+
+
+    db<PCNet32>(WRN) << "status before " << CPU::in16(_io_port + 0x10) << endl;
+
+    CPU::out32(_io_port + 0x20, phy);
+    db<PCNet32>(WRN) << "setting status to " << status << endl;
+    CPU::out32(_io_port + 0x10, status);
+
+    db<PCNet32>(WRN) << "status after " << CPU::in32(_io_port + 0x10) << endl;
+
+    // After this a frame should be sent?
 
     db<PCNet32>(WRN) << "RTL8139::reset() finished" << endl;
     db<PCNet32>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;

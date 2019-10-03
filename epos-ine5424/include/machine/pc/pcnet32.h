@@ -31,6 +31,7 @@ public:
         CMD        = 0x37,
         IMR        = 0x3C,
         ISR        = 0x3E,
+        RCR        = 0x44,
         CONFIG_1   = 0x52
     };
 
@@ -39,8 +40,12 @@ public:
         POWER_ON   = 0x00,
         RESET      = 0x10,
 
-        IMR_TOK    = 0x04,
-        IMR_ROK    = 0x01
+        TOK        = 0x04,
+        ROK        = 0x01,
+        ACCEPT_ANY = 0x0F,
+        TE         = 0x04,
+        RE         = 0x08,
+        WRAP       = 0x80
     };
 
     // Offsets from base I/O address
@@ -339,10 +344,6 @@ public:
 public:
     Reg8 prom(int a) {
         return CPU::in8(_io_port + PROM + a);
-    }
-
-    void power_on() {
-        CPU::out8(_io_port + CONFIG_1, POWER_ON);
     }
 
     void s_reset() {
