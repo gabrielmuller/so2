@@ -241,8 +241,24 @@ void PCNet32::reset()
 
     db<PCNet32>(WRN) << "log[0] " << ((unsigned int*) log)[0] << endl;
 
-    CPU::out32(_io_port + 0x20, phy);
-    CPU::out32(_io_port + 0x10, status);
+    int desc = 0;
+
+    CPU::out32(_io_port + TRSTART  + desc * 0x4, phy);
+    CPU::out32(_io_port + TRSTATUS + desc * 0x4, status);
+
+    log += 0x10000;
+    phy += 0x10000;
+
+    char msg2[] = "Hello world! This is the payload of another ethernet frame.\n";
+
+    new (log) Frame(_address, 0xbabaca, 0x0806, msg2, sizeof(msg2));
+
+    db<PCNet32>(WRN) << "log[0] " << ((unsigned int*) log)[0] << endl; // ??
+
+    desc = (desc + 1) % 4;
+
+    CPU::out32(_io_port + TRSTART  + desc * 0x4, phy);
+    CPU::out32(_io_port + TRSTATUS + desc * 0x4, status);
 
     // After this a frame should be sent
     db<PCNet32>(WRN) << "RTL8139::reset() finished" << endl;

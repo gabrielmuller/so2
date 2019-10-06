@@ -27,12 +27,14 @@ public:
     enum {
         MAC0_5     = 0x00,
         MAR0_7     = 0x08,
+        TRSTATUS   = 0x10,
+        TRSTART    = 0x20,
         RBSTART    = 0x30,
         CMD        = 0x37,
         IMR        = 0x3C,
         ISR        = 0x3E,
         RCR        = 0x44,
-        CONFIG_1   = 0x52
+        CONFIG_1   = 0x52,
     };
 
     // RTL8139 values
