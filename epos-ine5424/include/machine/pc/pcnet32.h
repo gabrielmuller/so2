@@ -41,13 +41,13 @@ public:
     enum {
         POWER_ON   = 0x00,
         RESET      = 0x10,
-
         TOK        = 0x04,
         ROK        = 0x01,
         ACCEPT_ANY = 0x0F,
         TE         = 0x04,
         RE         = 0x08,
-        WRAP       = 0x80
+        WRAP       = 0x80,
+        STATUS_TOK = 0x8000,
     };
 
     // Offsets from base I/O address
@@ -434,8 +434,12 @@ private:
     static const unsigned int TX_BUFS = Traits<PCNet32>::SEND_BUFFERS;
     static const unsigned int RX_BUFS =Traits<PCNet32>::RECEIVE_BUFFERS;
 
-    // Size of the DMA Buffer that will host the ring buffers and the init block
-    static const unsigned int DMA_BUFFER_SIZE = 0x400000;
+    static const unsigned int RX_BUFFER_SIZE = (8192 + 16 + 1500 + 3) & ~3;
+    static const unsigned int TX_BUFFER_SIZE = (sizeof(Frame) + 3) & ~3;
+    static const unsigned int TX_BUFFER_NR = 4;
+
+    // Size of the DMA Buffer
+    static const unsigned int DMA_BUFFER_SIZE = RX_BUFFER_SIZE + TX_BUFFER_SIZE * 4;
 
     // Interrupt dispatching binding
     struct Device {
@@ -467,6 +471,9 @@ public:
 
 private:
     void handle_int();
+    void tx_use(unsigned char index);
+    void tx_release(unsigned char index);
+    bool tx_is_using(unsigned char index);
 
     static void int_handler(const IC::Interrupt_Id & interrupt);
 
@@ -507,6 +514,15 @@ private:
 
     Buffer * _rx_buffer[RX_BUFS];
     Buffer * _tx_buffer[TX_BUFS];
+
+    unsigned char _tx_busy = 0; // Which of the four buffers are in use?
+    unsigned char _tx_tail = 0; // What descriptor is the NIC using?
+    unsigned char _tx_head = 0; // What descriptor is the CPU using?
+
+    char* _tx_base[4];
+    char* _tx_base_phy[4];
+    char* _rx_base;
+    char* _rx_base_phy;
 
     static Device _devices[UNITS];
 };

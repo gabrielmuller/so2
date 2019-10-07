@@ -20,39 +20,19 @@ PCNet32::~PCNet32()
 
 int PCNet32::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)
 {
-    // Wait for a buffer to become free and seize it
-    unsigned int i = _tx_cur;
-    for(bool locked = false; !locked; ) {
-        for(; _tx_ring[i].status & Tx_Desc::OWN; ++i %= TX_BUFS);
-        locked = _tx_buffer[i]->lock();
+    new (_tx_base[_tx_head]) Frame(_address, dst, prot, data, size);
+    unsigned short status = sizeof(Frame) & 0xfff;
+
+    while (tx_is_using(_tx_head)) {
+        // How to remove this busy wait?
     }
-    _tx_cur = (i + 1) % TX_BUFS; // _tx_cur and _rx_cur are simple accelerators to avoid scanning the ring buffer from the beginning.
-                                 // Losing a write in a race condition is assumed to be harmless. The FINC + CAS alternative seems too expensive.
-    Tx_Desc * desc = &_tx_ring[i];
-    Buffer * buf = _tx_buffer[i];
+    tx_use(_tx_head);
 
-    db<PCNet32>(TRC) << "PCNet32::send(s=" << _address << ",d=" << dst << ",p=" << hex << prot << dec << ",d=" << data << ",s=" << size << ")" << endl;
+    CPU::out32(_io_port + TRSTART  + _tx_head * 4, (long unsigned int) _tx_base_phy[_tx_head]);
+    CPU::out32(_io_port + TRSTATUS + _tx_head * 4, status);
 
-    // Assemble the Ethernet frame
-    new (buf->frame()) Frame(_address, dst, prot, data, size);
-
-    desc->size = -(size + sizeof(Header)); // 2's comp.
-
-    // Status must be set last, since it can trigger a send
-    desc->status = Tx_Desc::OWN | Tx_Desc::STP | Tx_Desc::ENP;
-
-    // Trigger an immediate send poll
-    csr(0, csr(0) | CSR0_TDMD);
-
-    _statistics.tx_packets++;
-    _statistics.tx_bytes += size;
-
-    // Wait for packet to be sent
-    // while(desc->status & Tx_Desc::OWN);
-
-    db<PCNet32>(INF) << "PCNet32::send:desc[" << i << "]=" << desc << " => " << *desc << endl;
-
-    buf->unlock();
+    _tx_head = (_tx_head + 1) % TX_BUFFER_NR;
+    db<PCNet32>(WRN) << "msg" << endl;
 
     return size;
 }
@@ -60,6 +40,7 @@ int PCNet32::send(const Address & dst, const Protocol & prot, const void * data,
 
 int PCNet32::receive(Address * src, Protocol * prot, void * data, unsigned int size)
 {
+    return size;
     db<PCNet32>(TRC) << "PCNet32::receive(s=" << *src << ",p=" << hex << *prot << dec << ",d=" << data << ",s=" << size << ") => " << endl;
 
     // Wait for a received frame and seize it
@@ -216,8 +197,7 @@ void PCNet32::reset()
     CPU::out32(_io_port + RBSTART, _dma_buf->phy_address());
 
     // Configure interrupt mask to transmit OK and receive OK events
-    CPU::out32(_io_port + IMR, TOK | ROK);
-    CPU::out32(_io_port + ISR, TOK | ROK);
+    CPU::out16(_io_port + IMR, TOK | ROK);
 
     // Configure which packets should be received, don't wrap around buffer
     CPU::out32(_io_port + RCR, ACCEPT_ANY | WRAP);
@@ -225,128 +205,62 @@ void PCNet32::reset()
     // Receive enable & transmit enable
     CPU::out8(_io_port  + CMD, TE | RE);
 
-    // Test transmit of a single frame.
-    Log_Addr log = _dma_buf->log_address();
-    Phy_Addr phy = _dma_buf->phy_address();
-
-    log += 0x10000;
-    phy += 0x10000;
-
-    char msg[] = "Hello world! This is the payload of an ethernet frame.\n";
-
+    // Set MAC address
     for (int i = 0; i < 6; i++) _address[i] = CPU::in8(_io_port + MAC0_5 + i);
 
-    new (log) Frame(_address, 0xbabaca, 0x0806, msg, sizeof(msg));
-    unsigned short status = sizeof(Frame) & 0xfff;
-
-    db<PCNet32>(WRN) << "log[0] " << ((unsigned int*) log)[0] << endl;
-
-    int desc = 0;
-
-    CPU::out32(_io_port + TRSTART  + desc * 0x4, phy);
-    CPU::out32(_io_port + TRSTATUS + desc * 0x4, status);
-
-    log += 0x10000;
-    phy += 0x10000;
-
-    char msg2[] = "Hello world! This is the payload of another ethernet frame.\n";
-
-    new (log) Frame(_address, 0xbabaca, 0x0806, msg2, sizeof(msg2));
-
-    db<PCNet32>(WRN) << "log[0] " << ((unsigned int*) log)[0] << endl; // ??
-
-    desc = (desc + 1) % 4;
-
-    CPU::out32(_io_port + TRSTART  + desc * 0x4, phy);
-    CPU::out32(_io_port + TRSTATUS + desc * 0x4, status);
-
-    // After this a frame should be sent
-    db<PCNet32>(WRN) << "RTL8139::reset() finished" << endl;
     db<PCNet32>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
 
-    return;
-
-    // Software style => PCI, 32 bits, burst mode (pg 147)
-    bcr(20, BCR20_SSIZE32 | BCR20_SWSTYLE2);
-
-    // Get MAC address from PROM
-    _address[0] = prom(0);
-    _address[1] = prom(1);
-    _address[2] = prom(2);
-    _address[3] = prom(3);
-    _address[4] = prom(4);
-    _address[5] = prom(5);
-    db<PCNet32>(INF) << "PCNet32::reset: MAC=" << _address << endl;
-
-    // Enable auto-select port
-    bcr(2, BCR2_ASEL);
-
-    // Enable full-duplex
-    bcr(9, BCR9_FDEN);
-
-    // Disable INIT interrupt and transmit stop on underflow and two part deferral
-    csr(3, CSR3_TINTM | CSR3_IDONM | CSR3_DXMT2PD | CSR3_LAPPEN | CSR3_DXSUFLO);
-
-    // Enable frame auto padding/stripping and auto CRC handling
-    csr(4, CSR4_DMAPLUS | CSR4_DPOLL | CSR4_APAD_XMT | CSR4_ASTRP_RCV | CSR4_TXSTRTM);
-
-    // Adjust interrupts
-    csr(5, CSR5_TOKINTD | CSR5_SINTE | CSR5_EXDINTE);
-
-    // Enable burst read and write
-    bcr(18, bcr(18) | BCR18_BREADE | BCR18_BWRITE);
-
-    // Promiscuous mode
-//    if(promiscuous)
-//        csr(15, csr(15) | CSR15_PROM);
-
-    // Set transmit start point to full frame
-    csr(80, csr(80) | 0x0c00); // XMTSP = 11
-
-    // Setup a init block
-    _iblock->mode = 0x0000;
-    _iblock->rlen = log2(RX_BUFS) << 4;
-    _iblock->tlen = log2(TX_BUFS) << 4;
-    _iblock->mac_addr = _address;
-    _iblock->filter1 = 0;
-    _iblock->filter2 = 0;
-    _iblock->rx_ring = _rx_ring_phy;
-    _iblock->tx_ring = _tx_ring_phy;
-    csr(1, _iblock_phy & 0xffff);
-    csr(2, _iblock_phy >> 16);
-
-    // Initialize the device
-    csr(0, CSR0_IENA | CSR0_INIT);
-    for(int i = 0; (i < 100) && !(csr(0) & CSR0_IDON); i++);
-    if(!(csr(0) & CSR0_IDON))
-        db<PCNet32>(WRN) << "PCNet32::reset: initialization failed!" << endl;
-
-    // Get MAC address from CSR
-    csr(0, CSR0_IDON | CSR0_STOP);
-    Address csr_addr;
-    csr_addr[0] = csr(PADR0) & 0x00ff;
-    csr_addr[1] = (csr(PADR0) & 0xff00) >> 8;
-    csr_addr[2] = csr(PADR1) & 0x00ff;
-    csr_addr[3] = (csr(PADR1) & 0xff00) >> 8;
-    csr_addr[4] = csr(PADR2) & 0x00ff;
-    csr_addr[5] = (csr(PADR2) & 0xff00) >> 8;
-
-    if(_address != csr_addr) {
-        db<PCNet32>(WRN) << "PCNet32::reset: initialization failed!" << endl;
-        db<PCNet32>(WRN) << "PCNet32::reset: MAC(ROM)=" << _address << endl;
-        db<PCNet32>(WRN) << "PCNet32::reset: MAC(CSR)=" << csr_addr << endl;
-    }
-
-    // Activate sending and receiving
-    csr(0, CSR0_IENA | CSR0_STRT);
-
-    // Reset statistics
-    new (&_statistics) Statistics;
 }
 
+void PCNet32::tx_use(unsigned char index) 
+{
+    _tx_busy |= 1 << index;
+}
+
+void PCNet32::tx_release(unsigned char index) 
+{
+    _tx_busy &= ~(1 << index);
+}
+
+bool PCNet32::tx_is_using(unsigned char index)
+{
+    return (bool) _tx_busy & (1 << index);
+}
 
 void PCNet32::handle_int()
 {
+    /* An interrupt usually means a single frame was transmitted or received,
+     * but in certain cases it might handle several frames or none at all.
+     */
+    unsigned short status = CPU::in16(_io_port + ISR);
+    db<PCNet32>(WRN) << "INTERRUPT STATUS " << status << endl;
+
+    if (status & TOK) {
+        // Transmit completed successfully, release descriptor
+        db<PCNet32>(WRN) << "TOK" << endl;
+        for (unsigned char i = 0; i < TX_BUFFER_NR; i++) {
+            // While descriptors have TOK status, release and advance tail
+            unsigned char index = (i + _tx_tail) % TX_BUFFER_NR;
+            if (tx_is_using(index) && 
+                CPU::in32(_io_port + TRSTATUS + index * 4) & STATUS_TOK)
+                tx_release(index);
+            else {
+                _tx_tail = index;
+                break;
+            }
+        }
+
+    }
+    if (status & ROK) {
+        // NIC received frame(s)
+        db<PCNet32>(WRN) << "ROK" << endl;
+        // TODO
+    }
+
+    // Acknowledge interrupt
+    CPU::out16(_io_port + ISR, status);
+
+    return;
     if(csr(0) & CSR0_INTR) {
         int csr0 = csr(0);
         int csr4 = csr(4);
@@ -427,7 +341,7 @@ void PCNet32::int_handler(const IC::Interrupt_Id & interrupt)
 {
     PCNet32 * dev = get_by_interrupt(interrupt);
 
-    db<PCNet32>(TRC) << "PCNet32::int_handler(int=" << interrupt << ",dev=" << dev << ")" << endl;
+    db<PCNet32>(WRN) << "PCNet32::int_handler(int=" << interrupt << ",dev=" << dev << ")" << endl;
 
     if(!dev)
         db<PCNet32>(WRN) << "PCNet32::int_handler: handler not assigned!" << endl;
