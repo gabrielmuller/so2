@@ -6,6 +6,7 @@
 #include <architecture.h>
 #include <utility/convert.h>
 #include <network/ethernet.h>
+#include <synchronizer.h>
 
 __BEGIN_SYS
 
@@ -514,6 +515,8 @@ private:
 
     Buffer * _rx_buffer[RX_BUFS];
     Buffer * _tx_buffer[TX_BUFS];
+
+    Semaphore * descMu[TX_BUFFER_NR];
 
     volatile unsigned char _tx_busy = 0; // Which of the four buffers are in use?
     volatile unsigned char _tx_tail = 0; // What descriptor is the NIC using?

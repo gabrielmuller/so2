@@ -19,20 +19,32 @@ PCNet32::~PCNet32()
 
 
 int PCNet32::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)
-{
+{   
+    unsigned char tx_curr = _tx_head;
+
+    db<PCNet32>(WRN) << "RTL8139::sending " << tx_curr << endl;
+
+    descMu[tx_curr]->p();
+
+    db<PCNet32>(WRN) << "RTL8139:: " << tx_curr << " locked" << endl;
+
     new (_tx_base[_tx_head]) Frame(_address, dst, prot, data, size);
     unsigned short status = sizeof(Frame) & 0xfff;
 
-    while (tx_is_using(_tx_head)) {
-        // How to remove this busy wait?
-    }
+    // while (tx_is_using(_tx_head)) {
+    //     // How to remove this busy wait?
+    // }
     tx_use(_tx_head);
 
     CPU::out32(_io_port + TRSTART  + _tx_head * 4, (long unsigned int) _tx_base_phy[_tx_head]);
     CPU::out32(_io_port + TRSTATUS + _tx_head * 4, status);
 
     _tx_head = (_tx_head + 1) % TX_BUFFER_NR;
-    db<PCNet32>(WRN) << dst << endl;
+
+    descMu[tx_curr]->v();
+
+    // db<PCNet32>(WRN) << "RTL8139::send " << dst << endl;
+    db<PCNet32>(WRN) << "RTL8139::sent " << tx_curr << endl;
 
     return size;
 }
