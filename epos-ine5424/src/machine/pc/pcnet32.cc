@@ -32,7 +32,7 @@ int PCNet32::send(const Address & dst, const Protocol & prot, const void * data,
     CPU::out32(_io_port + TRSTATUS + _tx_head * 4, status);
 
     _tx_head = (_tx_head + 1) % TX_BUFFER_NR;
-    db<PCNet32>(WRN) << "msg" << endl;
+    db<PCNet32>(WRN) << dst << endl;
 
     return size;
 }
@@ -121,37 +121,7 @@ PCNet32::Buffer * PCNet32::alloc(const Address & dst, const Protocol & prot, uns
 
 int PCNet32::send(Buffer * buf)
 {
-    unsigned int size = 0;
-
-    for(Buffer::Element * el = buf->link(); el; el = el->next()) {
-        buf = el->object();
-        Tx_Desc * desc = reinterpret_cast<Tx_Desc *>(buf->back());
-
-        db<PCNet32>(TRC) << "PCNet32::send(buf=" << buf << ")" << endl;
-
-        db<PCNet32>(INF) << "PCNet32::send:buf=" << buf << " => " << *buf << endl;
-
-        desc->size = -(buf->size() + sizeof(Header)); // 2's comp.
-
-        // Status must be set last, since it can trigger a send
-        desc->status = Tx_Desc::OWN | Tx_Desc::STP | Tx_Desc::ENP;
-
-        // Trigger an immediate send poll
-        csr(0, csr(0) | CSR0_TDMD);
-
-        size += buf->size();
-
-        _statistics.tx_packets++;
-        _statistics.tx_bytes += buf->size();
-
-        db<PCNet32>(INF) << "PCNet32::send:desc=" << desc << " => " << *desc << endl;
-
-        // Wait for packet to be sent and unlock the respective buffer
-        while(desc->status & Tx_Desc::OWN);
-        buf->unlock();
-    }
-
-    return size;
+    return 0;
 }
 
 
@@ -208,6 +178,9 @@ void PCNet32::reset()
     // Set MAC address
     for (int i = 0; i < 6; i++) _address[i] = CPU::in8(_io_port + MAC0_5 + i);
 
+    const char msg[] = "Frame frame frame hellooooo";
+    for (int i = 0; i < 1000; i++) send(0xbabaca + i, 0x0806, msg, sizeof(msg));
+
     db<PCNet32>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
 
 }
@@ -222,9 +195,9 @@ void PCNet32::tx_release(unsigned char index)
     _tx_busy &= ~(1 << index);
 }
 
-bool PCNet32::tx_is_using(unsigned char index)
+volatile bool PCNet32::tx_is_using(unsigned char index)
 {
-    return (bool) _tx_busy & (1 << index);
+    return (_tx_busy & (1 << index)) != 0;
 }
 
 void PCNet32::handle_int()
@@ -240,17 +213,14 @@ void PCNet32::handle_int()
         db<PCNet32>(WRN) << "TOK" << endl;
         for (unsigned char i = 0; i < TX_BUFFER_NR; i++) {
             // While descriptors have TOK status, release and advance tail
-            unsigned char index = (i + _tx_tail) % TX_BUFFER_NR;
-            if (tx_is_using(index) && 
-                CPU::in32(_io_port + TRSTATUS + index * 4) & STATUS_TOK)
-                tx_release(index);
-            else {
-                _tx_tail = index;
-                break;
-            }
+            if (tx_is_using(_tx_tail) && 
+                CPU::in32(_io_port + TRSTATUS + _tx_tail * 4) & STATUS_TOK) {
+                tx_release(_tx_tail);
+                _tx_tail = (_tx_tail + 1) % TX_BUFFER_NR;
+            } else break;
         }
-
     }
+
     if (status & ROK) {
         // NIC received frame(s)
         db<PCNet32>(WRN) << "ROK" << endl;
@@ -259,81 +229,6 @@ void PCNet32::handle_int()
 
     // Acknowledge interrupt
     CPU::out16(_io_port + ISR, status);
-
-    return;
-    if(csr(0) & CSR0_INTR) {
-        int csr0 = csr(0);
-        int csr4 = csr(4);
-        int csr5 = csr(5);
-
-        // Clear interrupts (i.e. acknowledge them)
-        csr(0, csr0);
-        csr(4, csr4);
-        csr(5, csr5);
-
-        if(csr0 & CSR0_IDON) { // Initialization done
-            // This should never happen, since IDON is disabled in reset()
-            // and all the initialization is controlled via polling, so if
-            // we are here, it must be due to a hardware induced reset.
-            // All we can do is to try to reset the nic!
-            db<PCNet32>(WRN) << "PCNet32::handle_int: initialization done!" << endl;
-            reset();
-        }
-
-        if(csr0 & CSR0_RINT) { // Frame received (possibly multiple, let's handle a whole round on the ring buffer)
-
-            // Note that ISRs in EPOS are reentrant, that's why locking was carefully made atomic
-            // Therefore, several instances of this code can compete to handle received buffers
-
-            for(unsigned int count = RX_BUFS, i = _rx_cur; count && !(_rx_ring[i].status & Rx_Desc::OWN); count--, ++i %= RX_BUFS, _rx_cur = i) {
-                // NIC received a frame in _rx_buffer[_rx_cur], let's check if it has already been handled
-                if(_rx_buffer[i]->lock()) { // if it wasn't, let's handle it
-                    Buffer * buf = _rx_buffer[i];
-                    Rx_Desc * desc = &_rx_ring[i];
-                    Frame * frame = buf->frame();
-
-                    // For the upper layers, size will represent the size of frame->data<T>()
-                    buf->size((desc->misc & 0x00000fff) - sizeof(Header) - sizeof(CRC));
-
-                    db<PCNet32>(TRC) << "PCNet32::handle_int:receive(s=" << frame->src() << ",p=" << hex << frame->header()->prot() << dec
-                                     << ",d=" << frame->data<void>() << ",s=" << buf->size() << ")" << endl;
-
-                    db<PCNet32>(INF) << "PCNet32::handle_int:desc[" << i << "]=" << desc << " => " << *desc << endl;
-
-                    IC::disable(IC::irq2int(_irq));
-                    if(!notify(frame->header()->prot(), buf)) // No one was waiting for this frame, so let it free for receive()
-                        free(buf);
-                    // TODO: this serialization is much too restrictive. It was done this way for students to play with
-                    IC::enable(IC::irq2int(_irq));
-                }
-            }
- 	}
-
-        if(csr0 & CSR0_ERR) { // Error
-            db<PCNet32>(WRN) << "PCNet32::handle_int:error =>";
-
-            if(csr0 & CSR0_MERR) { // Memory
-        	db<PCNet32>(WRN) << " memory";
-            }
-
-            if(csr0 & CSR0_MISS) { // Missed Frame
-        	db<PCNet32>(WRN) << " missed frame";
-        	_statistics.rx_overruns++;
-            }
-
-            if(csr0 & CSR0_CERR) { // Collision
-        	db<PCNet32>(WRN) << " collision";
-        	_statistics.collisions++;
-            }
-
-            if(csr0 & CSR0_BABL) { // Bable transmitter time-out
-        	db<PCNet32>(WRN) << " overrun";
-        	_statistics.tx_overruns++;
-            }
-
-            db<PCNet32>(WRN) << endl;
-        }
-    }
 }
 
 

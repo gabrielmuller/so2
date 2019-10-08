@@ -473,7 +473,7 @@ private:
     void handle_int();
     void tx_use(unsigned char index);
     void tx_release(unsigned char index);
-    bool tx_is_using(unsigned char index);
+    volatile bool tx_is_using(unsigned char index);
 
     static void int_handler(const IC::Interrupt_Id & interrupt);
 
@@ -515,8 +515,8 @@ private:
     Buffer * _rx_buffer[RX_BUFS];
     Buffer * _tx_buffer[TX_BUFS];
 
-    unsigned char _tx_busy = 0; // Which of the four buffers are in use?
-    unsigned char _tx_tail = 0; // What descriptor is the NIC using?
+    volatile unsigned char _tx_busy = 0; // Which of the four buffers are in use?
+    volatile unsigned char _tx_tail = 0; // What descriptor is the NIC using?
     unsigned char _tx_head = 0; // What descriptor is the CPU using?
 
     char* _tx_base[4];
