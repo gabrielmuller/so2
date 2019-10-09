@@ -185,12 +185,12 @@ void PCNet32::reset()
 
 }
 
-void PCNet32::tx_use(unsigned char index) 
+void PCNet32::tx_use(unsigned char index)
 {
     _tx_busy |= 1 << index;
 }
 
-void PCNet32::tx_release(unsigned char index) 
+void PCNet32::tx_release(unsigned char index)
 {
     _tx_busy &= ~(1 << index);
 }
@@ -213,7 +213,7 @@ void PCNet32::handle_int()
         db<PCNet32>(WRN) << "TOK" << endl;
         for (unsigned char i = 0; i < TX_BUFFER_NR; i++) {
             // While descriptors have TOK status, release and advance tail
-            if (tx_is_using(_tx_tail) && 
+            if (tx_is_using(_tx_tail) &&
                 CPU::in32(_io_port + TRSTATUS + _tx_tail * 4) & STATUS_TOK) {
                 tx_release(_tx_tail);
                 _tx_tail = (_tx_tail + 1) % TX_BUFFER_NR;

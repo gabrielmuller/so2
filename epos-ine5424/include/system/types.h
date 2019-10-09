@@ -151,6 +151,7 @@ class M95;
 class AT86RF;
 class GEM;
 class CC1101;
+class RTL8139;
 
 // Transducer Mediators (i.e. sensors and actuators)
 class Transducers;
