@@ -7,11 +7,38 @@
 
 __BEGIN_SYS
 
-class RTL8139: NIC<Ethernet>
+class RTL8139: public NIC<Ethernet>
 {
     friend class Machine_Common;
 
 private:
+    // RTL8139 registers
+    enum {
+        MAC0_5     = 0x00,
+        MAR0_7     = 0x08,
+        TRSTATUS   = 0x10,
+        TRSTART    = 0x20,
+        RBSTART    = 0x30,
+        CMD        = 0x37,
+        IMR        = 0x3C,
+        ISR        = 0x3E,
+        RCR        = 0x44,
+        CONFIG_1   = 0x52,
+    };
+
+    // RTL8139 values
+    enum {
+        POWER_ON   = 0x00,
+        RESET      = 0x10,
+        TOK        = 0x04,
+        ROK        = 0x01,
+        ACCEPT_ANY = 0x0F,
+        TE         = 0x04,
+        RE         = 0x08,
+        WRAP       = 0x80,
+        STATUS_TOK = 0x8000,
+    };
+
     typedef CPU::Reg8 Reg8;
     typedef CPU::Reg16 Reg16;
     typedef CPU::Reg32 Reg32;
@@ -42,6 +69,8 @@ public:
 
     void reset();
 
+    static RTL8139 * get(unsigned int unit = 0) { return _device.device; }
+
 protected:
     RTL8139(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dma_buf);
 
@@ -55,8 +84,7 @@ private:
         unsigned int interrupt;
     };
 
-    static const unsigned int UNITS = Traits<PCNet32>::UNITS;
-    static Device _devices[UNITS];
+    static Device _device;
 };
 
 // inline RTL8139::Timer::Time_Stamp RTL8139::Timer::Timer::read() { return TSC::time_stamp(); }
