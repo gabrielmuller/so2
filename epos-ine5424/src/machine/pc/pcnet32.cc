@@ -19,20 +19,25 @@ PCNet32::~PCNet32()
 
 
 int PCNet32::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)
-{
-    new (_tx_base[_tx_head]) Frame(_address, dst, prot, data, size);
-    unsigned short status = sizeof(Frame) & 0xfff;
+{   
+    db<PCNet32>(WRN) << "RTL8139 sending " << _tx_head << endl;
 
-    while (tx_is_using(_tx_head)) {
-        // How to remove this busy wait?
-    }
-    tx_use(_tx_head);
+    Buffer * buf = _tx_buffer[_tx_head];
+
+    while (!buf->lock());
+
+    db<PCNet32>(WRN) << "RTL8139 " << _tx_head << " locked" << endl;
+
+    new (buf->frame()) Frame(_address, dst, prot, data, size);
+    unsigned short status = sizeof(Frame) & 0xfff;
 
     CPU::out32(_io_port + TRSTART  + _tx_head * 4, (long unsigned int) _tx_base_phy[_tx_head]);
     CPU::out32(_io_port + TRSTATUS + _tx_head * 4, status);
 
     _tx_head = (_tx_head + 1) % TX_BUFFER_NR;
-    db<PCNet32>(WRN) << dst << endl;
+
+    // db<PCNet32>(WRN) << "RTL8139::send " << dst << endl;
+    db<PCNet32>(WRN) << "RTL8139 sent, _tx_head now at " << _tx_head << endl;
 
     return size;
 }
@@ -178,26 +183,11 @@ void PCNet32::reset()
     // Set MAC address
     for (int i = 0; i < 6; i++) _address[i] = CPU::in8(_io_port + MAC0_5 + i);
 
-    const char msg[] = "Frame frame frame hellooooo";
-    for (int i = 0; i < 1000; i++) send(0xbabaca + i, 0x0806, msg, sizeof(msg));
+    //const char msg[] = "Frame frame frame hellooooo";
+    //for (int i = 0; i < 4; i++) send(0xbabaca + i, 0x0806, msg, sizeof(msg));
 
     db<PCNet32>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
 
-}
-
-void PCNet32::tx_use(unsigned char index)
-{
-    _tx_busy |= 1 << index;
-}
-
-void PCNet32::tx_release(unsigned char index)
-{
-    _tx_busy &= ~(1 << index);
-}
-
-volatile bool PCNet32::tx_is_using(unsigned char index)
-{
-    return (_tx_busy & (1 << index)) != 0;
 }
 
 void PCNet32::handle_int()
@@ -213,9 +203,9 @@ void PCNet32::handle_int()
         db<PCNet32>(WRN) << "TOK" << endl;
         for (unsigned char i = 0; i < TX_BUFFER_NR; i++) {
             // While descriptors have TOK status, release and advance tail
-            if (tx_is_using(_tx_tail) &&
-                CPU::in32(_io_port + TRSTATUS + _tx_tail * 4) & STATUS_TOK) {
-                tx_release(_tx_tail);
+            if (CPU::in32(_io_port + TRSTATUS + _tx_tail * 4) & STATUS_TOK) {
+                _tx_buffer[_tx_tail]->unlock();
+                db<PCNet32>(WRN) << "TOK unlocked " << _tx_tail << endl;
                 _tx_tail = (_tx_tail + 1) % TX_BUFFER_NR;
             } else break;
         }

@@ -31,6 +31,7 @@ PCNet32::PCNet32(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dm
     for (unsigned int i = 0; i < TX_BUFFER_NR; i++) {
         _tx_base[i] = log;
         _tx_base_phy[i] = phy;
+        _tx_buffer[i] = new (log) Buffer(this, TX_BUFFER_SIZE);
         log += TX_BUFFER_SIZE;
         phy += TX_BUFFER_SIZE;
     }
