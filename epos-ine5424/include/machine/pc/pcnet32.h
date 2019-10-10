@@ -23,33 +23,6 @@ protected:
     typedef Ethernet::Address MAC_Address;
 
 public:
-    // RTL8139 registers
-    enum {
-        MAC0_5     = 0x00,
-        MAR0_7     = 0x08,
-        TRSTATUS   = 0x10,
-        TRSTART    = 0x20,
-        RBSTART    = 0x30,
-        CMD        = 0x37,
-        IMR        = 0x3C,
-        ISR        = 0x3E,
-        RCR        = 0x44,
-        CONFIG_1   = 0x52,
-    };
-
-    // RTL8139 values
-    enum {
-        POWER_ON   = 0x00,
-        RESET      = 0x10,
-        TOK        = 0x04,
-        ROK        = 0x01,
-        ACCEPT_ANY = 0x0F,
-        TE         = 0x04,
-        RE         = 0x08,
-        WRAP       = 0x80,
-        STATUS_TOK = 0x8000,
-    };
-
     // Offsets from base I/O address
     enum {
         PROM       = 0x00, // 16 bytes EEPROM
@@ -347,12 +320,12 @@ public:
     Reg8 prom(int a) {
         return CPU::in8(_io_port + PROM + a);
     }
+    void s_reset() { // pg 96
+        // Assert S_RESET
+        CPU::in16(_io_port + WIO_RESET);
 
-    void s_reset() {
-        CPU::out8(_io_port + CMD, RESET);
-
-        // Wait for RST bit to be low
-        while (CPU::in8(_io_port + CMD) & RESET) {}
+        // Wait for STOP
+        for(int i = 0; (i < 100) && !(csr(CSC) & 0x0004); i++);
     }
 
     Reg16 rap() volatile {
@@ -422,8 +395,8 @@ class PCNet32: public NIC<Ethernet>, private Am79C970A
 
 private:
     // PCI ID
-    static const unsigned int PCI_VENDOR_ID = 0x10EC;
-    static const unsigned int PCI_DEVICE_ID = 0x8139; // RTL8139
+    static const unsigned int PCI_VENDOR_ID = 0x1022;
+    static const unsigned int PCI_DEVICE_ID = 0x2000;
     static const unsigned int PCI_REG_IO = 0;
 
     // Mode
@@ -434,12 +407,10 @@ private:
     static const unsigned int TX_BUFS = Traits<PCNet32>::SEND_BUFFERS;
     static const unsigned int RX_BUFS =Traits<PCNet32>::RECEIVE_BUFFERS;
 
-    static const unsigned int RX_BUFFER_SIZE = (8192 + 16 + 1500 + 3) & ~3;
-    static const unsigned int TX_BUFFER_SIZE = (sizeof(Frame) + 3) & ~3;
-    static const unsigned int TX_BUFFER_NR = 4;
-
-    // Size of the DMA Buffer
-    static const unsigned int DMA_BUFFER_SIZE = RX_BUFFER_SIZE + TX_BUFFER_SIZE * 4;
+    // Size of the DMA Buffer that will host the ring buffers and the init block
+    static const unsigned int DMA_BUFFER_SIZE = ((sizeof(Init_Block) + 15) & ~15U) +
+        RX_BUFS * ((sizeof(Rx_Desc) + 15) & ~15U) + TX_BUFS * ((sizeof(Tx_Desc) + 15) & ~15U) +
+        RX_BUFS * ((sizeof(Buffer) + 15) & ~15U) + TX_BUFS * ((sizeof(Buffer) + 15) & ~15U); // align128() cannot be used here
 
     // Interrupt dispatching binding
     struct Device {
@@ -510,16 +481,7 @@ private:
     Phy_Addr _tx_ring_phy;
 
     Buffer * _rx_buffer[RX_BUFS];
-    Buffer * _tx_buffer[TX_BUFFER_NR];
-
-
-    volatile unsigned char _tx_tail = 0; // What descriptor is the NIC using?
-    unsigned char _tx_head = 0; // What descriptor is the CPU using?
-
-    char* _tx_base[TX_BUFFER_NR];
-    char* _tx_base_phy[TX_BUFFER_NR];
-    char* _rx_base;
-    char* _rx_base_phy;
+    Buffer * _tx_buffer[TX_BUFS];
 
     static Device _devices[UNITS];
 };
