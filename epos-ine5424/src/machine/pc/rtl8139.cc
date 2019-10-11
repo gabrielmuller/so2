@@ -2,8 +2,10 @@
 
 #include <machine/machine.h>
 #include <machine/pc/rtl8139.h>
+#include <process.h>
 #include <system.h>
 #include <time.h>
+#include <netservice.h>
 
 __BEGIN_SYS
 
@@ -128,6 +130,7 @@ void RTL8139::handle_int()
     if (status & ROK) {
         // NIC received frame(s)
         db<RTL8139>(WRN) << "ROK" << endl;
+        NetService::resume();
         // TODO
     }
 
