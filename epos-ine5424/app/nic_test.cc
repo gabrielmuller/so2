@@ -28,12 +28,12 @@ int main()
             data[nic->mtu() - 1] = '\n';
             nic->send(nic->broadcast(), 0x8888, data, nic->mtu());
         }
-    } else { // receiver
+    } /*else { // receiver
         for(int i = 0; i < 10; i++) {
            nic->receive(&src, &prot, data, nic->mtu());
            cout << "  Data: " << data;
         }
-    }
+    }*/
 
     NIC<Ethernet>::Statistics stat = nic->statistics();
     cout << "Statistics\n"

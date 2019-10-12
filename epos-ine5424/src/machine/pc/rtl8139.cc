@@ -48,12 +48,16 @@ int RTL8139::receive(Address * src, Protocol * prot, void * data, unsigned int s
     db<RTL8139>(WRN) << "RTL8139 receiving" << endl;
 
 
-    unsigned long dstart = CPU::in32(_io_port + CAPR) + 0x10;
-    unsigned long rx_head = *(unsigned long *) ((unsigned long)_rx_buffer + dstart);
-    auto packet_len = (rx_head >> 16);
+    unsigned int dstart = CPU::in32(_io_port + CAPR);
+    unsigned int * rx = (unsigned int *) (_rx_buffer + dstart);
+    unsigned int header = *rx;
+    unsigned int packet_len = (header >> 16);
+    unsigned int status = header & 0xffff;
+    rx += 4;
 
-    db<RTL8139>(WRN) << "rx_head=" << rx_head << endl;
+    db<RTL8139>(WRN) << "rx_head=" << rx << endl;
     db<RTL8139>(WRN) << "packet_len=" << packet_len << endl;
+    db<RTL8139>(WRN) << "status=" << status << endl;
 
     // copy data to application
 
@@ -66,7 +70,6 @@ int RTL8139::receive(Address * src, Protocol * prot, void * data, unsigned int s
 }
 
 
-// Allocated buffers must be sent or release IN ORDER as assumed by the RTL8139
 RTL8139::Buffer * RTL8139::alloc(const Address & dst, const Protocol & prot, unsigned int once, unsigned int always, unsigned int payload)
 {
     return nullptr;
@@ -145,7 +148,7 @@ void RTL8139::handle_int()
     if (status & ROK) {
         // NIC received frame(s)
         db<RTL8139>(WRN) << "ROK" << endl;
-        // TODO
+        receive(nullptr, nullptr, nullptr, 0);
     }
 
     // Acknowledge interrupt
