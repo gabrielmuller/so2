@@ -1,17 +1,17 @@
 #include <netservice.h>
+#include <network/ethernet.h>
 
 __BEGIN_SYS
 
 Thread * NetService::self;
 bool NetService::suspended;
+Ethernet::Buffer::List NetService::received;
 
 int NetService::start() 
 {
     suspended = false;
     self = Thread::self();
-    db<NetService>(WRN) << self << " thread before suspending" << endl;
-    self->suspend();
-    db<NetService>(WRN) << self << " after suspending" << endl;
+    suspend();
 
     return 0;
 }
@@ -27,9 +27,19 @@ void NetService::suspend()
 void NetService::resume() 
 {
     if (suspended) {
-        self->resume();
         suspended = false;
+        self->resume();
     }
 }
+
+void NetService::insert_buffer(const Ethernet::Buffer * buf) {
+    received.insert(new Ethernet::Buffer::List::Element(buf));
+}
+
+Ethernet::Buffer * NetService::remove_buffer() {
+    return received.remove()->object();
+}
+
+
 
 __END_SYS
