@@ -22,13 +22,15 @@ RTL8139::~RTL8139()
 
 int RTL8139::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)
 {
-    db<RTL8139>(WRN) << "RTL8139 sending " << _tx_head << endl;
-
     Buffer * buf = _tx_buffer[_tx_head];
 
-    while (!buf->lock());
+    db<RTL8139>(WRN) << "RTL8139 will send, _tx_head " << _tx_head << endl;
 
-    db<RTL8139>(WRN) << "RTL8139 " << _tx_head << " locked" << endl;
+    while (!buf->lock()) {
+        db<RTL8139>(WRN) << "RTL8139 waiting to send, _tx_head " << _tx_head << endl;
+        _waiting_to_send = Thread::self();
+        _waiting_to_send->suspend();
+    }
 
     new (buf->frame()) Frame(_address, dst, prot, data, size);
     unsigned short status = sizeof(Frame) & 0xfff;
@@ -38,7 +40,6 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
 
     _tx_head = (_tx_head + 1) % TX_BUFFER_NR;
 
-    // db<RTL8139>(WRN) << "RTL8139::send " << dst << endl;
     db<RTL8139>(WRN) << "RTL8139 sent, _tx_head now at " << _tx_head << endl;
 
     return size;
@@ -137,13 +138,25 @@ void RTL8139::handle_int()
     if (status & TOK) {
         // Transmit completed successfully, release descriptor
         db<RTL8139>(WRN) << "TOK" << endl;
+        bool transmitted = false;
         for (unsigned char i = 0; i < TX_BUFFER_NR; i++) {
             // While descriptors have TOK status, release and advance tail
-            if (CPU::in32(_io_port + TRSTATUS + _tx_tail * 4) & STATUS_TOK) {
+            unsigned int status = CPU::in32(_io_port + TRSTATUS + _tx_tail * 4);
+            if (status & STATUS_TOK) {
                 _tx_buffer[_tx_tail]->unlock();
-                db<RTL8139>(WRN) << "TOK unlocked " << _tx_tail << endl;
+
+                // Clear TOK status
+                CPU::out32(_io_port + TRSTATUS + _tx_tail * 4, status & ~STATUS_TOK);
+
+                db<RTL8139>(WRN) << "\tTOK unlocked " << _tx_tail << endl;
                 _tx_tail = (_tx_tail + 1) % TX_BUFFER_NR;
+                transmitted = true;
             } else break;
+        }
+
+        if (transmitted && _waiting_to_send != nullptr) {
+            _waiting_to_send->resume();
+            _waiting_to_send = nullptr;
         }
     }
 

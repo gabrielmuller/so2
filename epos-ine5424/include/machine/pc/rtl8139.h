@@ -126,6 +126,8 @@ private:
 
     char * _tx_base_phy[TX_BUFFER_NR];
     char * _rx_base_phy;
+
+    Thread * _waiting_to_send;
 };
 
 __END_SYS
