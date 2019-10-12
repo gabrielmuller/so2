@@ -19,7 +19,7 @@ RTL8139::~RTL8139()
 
 
 int RTL8139::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)
-{   
+{
     db<RTL8139>(WRN) << "RTL8139 sending " << _tx_head << endl;
 
     Buffer * buf = _tx_buffer[_tx_head];
@@ -45,6 +45,23 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
 
 int RTL8139::receive(Address * src, Protocol * prot, void * data, unsigned int size)
 {
+    db<RTL8139>(WRN) << "RTL8139 receiving" << endl;
+
+
+    unsigned long dstart = CPU::in32(_io_port + CAPR) + 0x10;
+    unsigned long rx_head = *(unsigned long *) ((unsigned long)_rx_buffer + dstart);
+    auto packet_len = (rx_head >> 16);
+
+    db<RTL8139>(WRN) << "rx_head=" << rx_head << endl;
+    db<RTL8139>(WRN) << "packet_len=" << packet_len << endl;
+
+    // copy data to application
+
+    // update CAPR
+    // CPU::out32(_io_port + CAPR, something)
+
+
+
     return size;
 }
 

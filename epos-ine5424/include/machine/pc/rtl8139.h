@@ -20,6 +20,8 @@ private:
         TRSTART    = 0x20,
         RBSTART    = 0x30,
         CMD        = 0x37,
+        CAPR       = 0x38,
+        CBR        = 0x3A,
         IMR        = 0x3C,
         ISR        = 0x3E,
         RCR        = 0x44,
