@@ -55,16 +55,28 @@ int RTL8139::receive(Address * src, Protocol * prot, void * data, unsigned int s
     unsigned int header = *rx;
     unsigned int packet_len = (header >> 16);
     unsigned int status = header & 0xffff;
-    rx += 4;
+    unsigned int l;
+    rx ++;
 
     db<RTL8139>(WRN) << "rx_head=" << rx << endl;
     db<RTL8139>(WRN) << "packet_len=" << packet_len << endl;
     db<RTL8139>(WRN) << "status=" << status << endl;
 
-    // copy data to application
+    Frame * frame = reinterpret_cast<Frame *>(rx);
 
+    // copy data to application
+    memcpy(data, frame->data<void>(), packet_len);
     // update CAPR
-    // CPU::out32(_io_port + CAPR, something)
+    l = dstart;
+    l += packet_len + 4;
+    l =  (l + 3) & ~3;
+
+    if (l >= RX_BUFFER_SIZE)
+    {
+        l = RBSTART;
+    }
+
+    CPU::out32(_io_port + CAPR, l);
 
 
 
@@ -95,7 +107,7 @@ void RTL8139::reset()
     // Power on the NIC
     CPU::out8(_io_port + CONFIG_1, POWER_ON);
 
-    db<RTL8139>(WRN) << "DMA Buffer is at phy " << _dma_buf->phy_address() << endl;
+    db<RTL8139>(WRN) << "DMA Buffer is at phy " << _dma_buf->phy_address() << " | log " << _dma_buf->log_address() << endl;
 
     // Reset the device
 
