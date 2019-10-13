@@ -62,11 +62,13 @@ void RTL8139::receive()
     db<RTL8139>(WRN) << "status=" << status << endl;
 
     Frame * frame = reinterpret_cast<Frame *>(rx);
+    db<RTL8139>(WRN) << "frame src " << frame->src() << endl;
 
     Buffer * buf = new Buffer(this, packet_len);
 
     // copy data to application
-    memcpy(buf->frame(), frame->data<void>(), packet_len);
+    memcpy(buf->frame(), frame, sizeof(Frame));
+    db<RTL8139>(WRN) << "buffer src " << ((Frame*) buf->frame())->src() << endl;
 
     // update CAPR
     _rx_read += packet_len + 4;

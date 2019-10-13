@@ -34,7 +34,9 @@ int main()
     } else {
         for(int i = 0; i < 100; i++) {
            NetService::receive(&src, &prot, data, nic->mtu());
-           cout << "  Data: " << data;
+           cout << "  Data: " << data << endl;
+           cout << "  prot: " << hex << prot << endl;
+           cout << "  src: " << src << endl;
         }
     }
 
