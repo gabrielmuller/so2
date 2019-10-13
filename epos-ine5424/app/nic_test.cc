@@ -26,13 +26,13 @@ int main()
     if(self[5] % 2) { // sender
         Delay (5000000);
 
-        for(int i = 0; i < 10; i++) {
-            memset(data, '0' + i, nic->mtu());
+        for(int i = 0; i < 100; i++) {
+            memset(data, '0' + (i % 10), nic->mtu());
             data[nic->mtu() - 1] = '\n';
             NetService::send(nic->broadcast(), 0x8888, data, nic->mtu());
         }
     } else {
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < 100; i++) {
            NetService::receive(&src, &prot, data, nic->mtu());
            cout << "  Data: " << data;
         }

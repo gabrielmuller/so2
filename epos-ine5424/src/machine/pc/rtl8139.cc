@@ -46,18 +46,16 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
 }
 
 
-int RTL8139::receive(Address * src, Protocol * prot, void * data, unsigned int size)
+void RTL8139::receive()
 {
     db<RTL8139>(WRN) << "RTL8139 receiving" << endl;
 
 
-    unsigned int dstart = CPU::in32(_io_port + CAPR);
-    unsigned int * rx = (unsigned int *) (_rx_buffer + dstart);
+    unsigned int * rx = (unsigned int *) (_rx_buffer + _rx_read);
     unsigned int header = *rx;
     unsigned int packet_len = (header >> 16);
     unsigned int status = header & 0xffff;
-    unsigned int l;
-    rx ++;
+    rx++;
 
     db<RTL8139>(WRN) << "rx_head=" << rx << endl;
     db<RTL8139>(WRN) << "packet_len=" << packet_len << endl;
@@ -65,25 +63,26 @@ int RTL8139::receive(Address * src, Protocol * prot, void * data, unsigned int s
 
     Frame * frame = reinterpret_cast<Frame *>(rx);
 
-    // copy data to application
-    memcpy(data, frame->data<void>(), packet_len);
-    // update CAPR
-    l = dstart;
-    l += packet_len + 4;
-    l =  (l + 3) & ~3;
+    Buffer * buf = new Buffer(this, packet_len);
 
-    if (l >= RX_BUFFER_SIZE)
-    {
-        l = RBSTART;
+    // copy data to application
+    memcpy(buf->frame(), frame->data<void>(), packet_len);
+
+    // update CAPR
+    _rx_read += packet_len + 4;
+    _rx_read =  (_rx_read + 3) & ~3;
+
+    if (_rx_read > RX_NO_WRAP_SIZE) {
+        _rx_read -= RX_NO_WRAP_SIZE;
+        db<RTL8139>(WRN) << "\tWRAPPED " << _rx_read << endl;
     }
 
-    CPU::out32(_io_port + CAPR, l);
+    CPU::out16(_io_port + CAPR, _rx_read - 0x10);
+    db<RTL8139>(WRN) << "out(CAPR, " << _rx_read - 0x10<< ")" << endl;
+    db<RTL8139>(WRN) << "CBR " << CPU::in16(_io_port + CBR) << endl;
 
-
-
-    return size;
+    NetService::insert_buffer(buf);
 }
-
 
 RTL8139::Buffer * RTL8139::alloc(const Address & dst, const Protocol & prot, unsigned int once, unsigned int always, unsigned int payload)
 {
@@ -111,7 +110,6 @@ void RTL8139::reset()
     db<RTL8139>(WRN) << "DMA Buffer is at phy " << _dma_buf->phy_address() << " | log " << _dma_buf->log_address() << endl;
 
     // Reset the device
-
     CPU::out8(_io_port + CMD, RESET);
 
     // Wait for RST bit to be low
@@ -131,9 +129,6 @@ void RTL8139::reset()
 
     // Set MAC address
     for (int i = 0; i < 6; i++) _address[i] = CPU::in8(_io_port + MAC0_5 + i);
-
-    //const char msg[] = "Frame frame frame hellooooo";
-    //for (int i = 0; i < 4; i++) send(0xbabaca + i, 0x0806, msg, sizeof(msg));
 
     db<RTL8139>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
 
@@ -175,6 +170,12 @@ void RTL8139::handle_int()
     if (status & ROK) {
         // NIC received frame(s)
         db<RTL8139>(WRN) << "ROK" << endl;
+
+        while ((CPU::in16(_io_port + CBR) < _rx_read) || 
+            ((_rx_read + sizeof(Frame)) < CPU::in16(_io_port + CBR))
+            )
+            receive();
+
         NetService::resume();
     }
 

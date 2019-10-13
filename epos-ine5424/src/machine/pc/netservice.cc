@@ -33,16 +33,24 @@ void NetService::resume()
 
 void NetService::insert_buffer(const Ethernet::Buffer * buf) {
     received.insert(new Ethernet::Buffer::List::Element(buf));
+    db<NetService>(WRN) << "queue size " << received.size() << endl;
 }
 
 Ethernet::Buffer * NetService::remove_buffer() {
+    db<NetService>(WRN) << "removed queue size " << received.size() << endl;
     return received.remove()->object();
 }
 
 int NetService::receive(Address * src, Protocol * prot, void * data, unsigned int size) 
 {
-    suspend();
-    return nic->receive(src, prot, data, size);
+    if (received.empty())
+        suspend();
+    Ethernet::Buffer * buf = remove_buffer();
+    Ethernet::Frame * frame = buf->frame();
+    *src = frame->src();
+    *prot = frame->prot();
+    memcpy(data, frame->data<void>(), size);
+    return size;
 }
 
 int NetService::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)

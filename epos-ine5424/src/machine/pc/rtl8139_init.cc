@@ -19,7 +19,7 @@ RTL8139::RTL8139(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dm
     Phy_Addr phy = _dma_buf->phy_address();
 
     // Allocate receive buffer
-    _rx_buffer = new (log) Buffer(this, RX_BUFFER_SIZE);
+    _rx_buffer = new (log) char[RX_BUFFER_SIZE];
     _rx_base_phy = phy;
 
     log += RX_BUFFER_SIZE;

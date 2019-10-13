@@ -58,7 +58,8 @@ private:
     static const unsigned int UNITS = Traits<RTL8139>::UNITS;
 
     // Buffer config
-    static const unsigned int RX_BUFFER_SIZE = (8192 + 16 + 1500 + 3) & ~3;
+    static const unsigned int RX_NO_WRAP_SIZE = 8192;
+    static const unsigned int RX_BUFFER_SIZE = (RX_NO_WRAP_SIZE + 16 + 1522 + 3) & ~3;
     static const unsigned int TX_BUFFER_SIZE = (sizeof(Frame) + 3) & ~3;
     static const unsigned int TX_BUFFER_NR = 4;
 
@@ -69,7 +70,8 @@ public:
     ~RTL8139();
 
     int send(const Address & dst, const Protocol & prot, const void * data, unsigned int size);
-    int receive(Address * src, Protocol * prot, void * data, unsigned int size);
+    void receive();
+    int receive(Address * src, Protocol * prot, void * data, unsigned int size) { return size; }
 
     Buffer * alloc(const Address & dst, const Protocol & prot, unsigned int once, unsigned int always, unsigned int payload);
     int send(Buffer * buf);
@@ -117,7 +119,7 @@ private:
     DMA_Buffer * _dma_buf;
     IO_Port _io_port;
 
-    Buffer * _rx_buffer;
+    char * _rx_buffer;
     Buffer * _tx_buffer[TX_BUFFER_NR];
 
 
@@ -126,6 +128,7 @@ private:
 
     char * _tx_base_phy[TX_BUFFER_NR];
     char * _rx_base_phy;
+    unsigned int _rx_read = 0;
 
     Thread * _waiting_to_send;
 };
