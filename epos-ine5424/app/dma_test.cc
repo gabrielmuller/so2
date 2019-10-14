@@ -7,7 +7,7 @@
 #include <process.h>
 #include <time.h>
 
-#define FIBBONACCI_N 40
+#define FIBBONACCI_N 30
 
 using namespace EPOS;
 
@@ -41,22 +41,22 @@ int sendrecv_data(void) {
    NIC<Ethernet>::Address self = nic->address();
 
    if (self[5] % 2) { // sender
-      Delay(5000000);
-
-      memset(data, '0', nic->mtu());
-      data[nic->mtu() - 1] = '\n';
-      NetService::send(nic->broadcast(), 0x8888, data, nic->mtu());
+      //Delay(5000000);
+      cout << "\nSender starting..." << endl;
+      for(int i = 0; i < 10; i++) {
+         memset(data, '0' + (i % 10), nic->mtu());
+         data[nic->mtu() - 1] = '\n';
+         NetService::send(nic->broadcast(), 0x8888, data, nic->mtu());
+      }
+      cout << "\nSender ending..." << endl;
    } else {
-      NetService::receive(&src, &prot, data, nic->mtu());
-      // cout << "  Data: " << data;
+      cout << "\nReceiver starting..." << endl;
+      for(int i = 0; i < 10; i++) {
+         NetService::receive(&src, &prot, data, nic->mtu());
+         cout << "  Data: " << data << endl;
+      }
+      cout << "\nReceiver ending..." << endl;
    }
-
-   // NIC<Ethernet>::Statistics stat = nic->statistics();
-   // cout << "Statistics\n"
-   //      << "Tx Packets: " << stat.tx_packets << "\n"
-   //      << "Tx Bytes:   " << stat.tx_bytes << "\n"
-   //      << "Rx Packets: " << stat.rx_packets << "\n"
-   //      << "Rx Bytes:   " << stat.rx_bytes << "\n";
 }
 
 int main() {
@@ -69,7 +69,7 @@ int main() {
    Chronometer chrono;
    chrono.start();
 
-   int fibo = fibbonacci(40);
+   int fibo = fibbonacci(FIBBONACCI_N);
 
    chrono.stop();
    cpu_time = chrono.read() / 1000;
