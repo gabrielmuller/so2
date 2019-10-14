@@ -40,7 +40,7 @@ RTL8139::RTL8139(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dm
 
 void RTL8139::init(unsigned int unit)
 {
-    db<Init, RTL8139>(WRN) << "DMA_BUFF_SIZE " << DMA_BUFFER_SIZE<< endl;
+    db<Init, RTL8139>(TRC) << "DMA_BUFF_SIZE " << DMA_BUFFER_SIZE<< endl;
     // Scan the PCI bus for device
     PCI::Locator loc = PCI::scan(PCI_VENDOR_ID, PCI_DEVICE_ID, unit);
     if(!loc) {

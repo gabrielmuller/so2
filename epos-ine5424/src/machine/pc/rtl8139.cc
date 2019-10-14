@@ -24,10 +24,10 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
 {
     Buffer * buf = _tx_buffer[_tx_head];
 
-    db<RTL8139>(WRN) << "RTL8139 will send, _tx_head " << _tx_head << endl;
+    db<RTL8139>(TRC) << "RTL8139 will send, _tx_head " << _tx_head << endl;
 
     while (!buf->lock()) {
-        db<RTL8139>(WRN) << "RTL8139 waiting to send, _tx_head " << _tx_head << endl;
+        db<RTL8139>(TRC) << "RTL8139 waiting to send, _tx_head " << _tx_head << endl;
         _waiting_to_send = Thread::self();
         _waiting_to_send->suspend();
     }
@@ -40,7 +40,7 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
 
     _tx_head = (_tx_head + 1) % TX_BUFFER_NR;
 
-    db<RTL8139>(WRN) << "RTL8139 sent, _tx_head now at " << _tx_head << endl;
+    db<RTL8139>(TRC) << "RTL8139 sent, _tx_head now at " << _tx_head << endl;
 
     return size;
 }
@@ -48,7 +48,7 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
 
 void RTL8139::receive()
 {
-    db<RTL8139>(WRN) << "RTL8139 receiving" << endl;
+    db<RTL8139>(TRC) << "RTL8139 receiving" << endl;
 
 
     unsigned int * rx = (unsigned int *) (_rx_buffer + _rx_read);
@@ -57,18 +57,18 @@ void RTL8139::receive()
     unsigned int status = header & 0xffff;
     rx++;
 
-    db<RTL8139>(WRN) << "rx_head=" << rx << endl;
-    db<RTL8139>(WRN) << "packet_len=" << packet_len << endl;
-    db<RTL8139>(WRN) << "status=" << status << endl;
+    db<RTL8139>(TRC) << "rx_head=" << rx << endl;
+    db<RTL8139>(TRC) << "packet_len=" << packet_len << endl;
+    db<RTL8139>(TRC) << "status=" << status << endl;
 
     Frame * frame = reinterpret_cast<Frame *>(rx);
-    db<RTL8139>(WRN) << "frame src " << frame->src() << endl;
+    db<RTL8139>(TRC) << "frame src " << frame->src() << endl;
 
     Buffer * buf = new Buffer(this, packet_len);
 
     // copy data to application
     memcpy(buf->frame(), frame, sizeof(Frame));
-    db<RTL8139>(WRN) << "buffer src " << ((Frame*) buf->frame())->src() << endl;
+    db<RTL8139>(TRC) << "buffer src " << ((Frame*) buf->frame())->src() << endl;
 
     // update CAPR
     _rx_read += packet_len + 4;
@@ -76,12 +76,12 @@ void RTL8139::receive()
 
     if (_rx_read > RX_NO_WRAP_SIZE) {
         _rx_read -= RX_NO_WRAP_SIZE;
-        db<RTL8139>(WRN) << "\tWRAPPED " << _rx_read << endl;
+        db<RTL8139>(TRC) << "\tWRAPPED " << _rx_read << endl;
     }
 
     CPU::out16(_io_port + CAPR, _rx_read - 0x10);
-    db<RTL8139>(WRN) << "out(CAPR, " << _rx_read - 0x10<< ")" << endl;
-    db<RTL8139>(WRN) << "CBR " << CPU::in16(_io_port + CBR) << endl;
+    db<RTL8139>(TRC) << "out(CAPR, " << _rx_read - 0x10<< ")" << endl;
+    db<RTL8139>(TRC) << "CBR " << CPU::in16(_io_port + CBR) << endl;
 
     NetService::insert_buffer(buf);
 }
@@ -104,12 +104,12 @@ void RTL8139::free(Buffer * buf) {}
 void RTL8139::reset()
 {
 
-    db<RTL8139>(WRN) << "RTL8139::reset()" << endl;
+    db<RTL8139>(TRC) << "RTL8139::reset()" << endl;
 
     // Power on the NIC
     CPU::out8(_io_port + CONFIG_1, POWER_ON);
 
-    db<RTL8139>(WRN) << "DMA Buffer is at phy " << _dma_buf->phy_address() << " | log " << _dma_buf->log_address() << endl;
+    db<RTL8139>(TRC) << "DMA Buffer is at phy " << _dma_buf->phy_address() << " | log " << _dma_buf->log_address() << endl;
 
     // Reset the device
     CPU::out8(_io_port + CMD, RESET);
@@ -132,7 +132,7 @@ void RTL8139::reset()
     // Set MAC address
     for (int i = 0; i < 6; i++) _address[i] = CPU::in8(_io_port + MAC0_5 + i);
 
-    db<RTL8139>(WRN) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
+    db<RTL8139>(TRC) << "RBSTART is " << CPU::in32(_io_port + RBSTART) << endl;
 
 }
 
