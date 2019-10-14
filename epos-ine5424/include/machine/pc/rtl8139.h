@@ -34,6 +34,7 @@ private:
         RESET      = 0x10,
         TOK        = 0x04,
         ROK        = 0x01,
+        RX_OVERFLOW= 0x10,
         ACCEPT_ANY = 0x0F,
         TE         = 0x04,
         RE         = 0x08,
@@ -85,6 +86,10 @@ public:
     void reset();
 
     static RTL8139 * get(unsigned int unit = 0) { return _devices[unit].device; }
+
+    // For testing purposes
+    void disable_int();
+    void enable_int();
 
 protected:
     RTL8139(unsigned int unit, IO_Port io_port, IO_Irq irq, DMA_Buffer * dma_buf);

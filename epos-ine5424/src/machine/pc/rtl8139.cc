@@ -27,9 +27,10 @@ int RTL8139::send(const Address & dst, const Protocol & prot, const void * data,
     db<RTL8139>(TRC) << "RTL8139 will send, _tx_head " << _tx_head << endl;
 
     while (!buf->lock()) {
-        db<RTL8139>(TRC) << "RTL8139 waiting to send, _tx_head " << _tx_head << endl;
+        db<RTL8139>(WRN) << "\tOVERFLOW: waiting to send, _tx_head=" << _tx_head << endl;
         _waiting_to_send = Thread::self();
         _waiting_to_send->suspend();
+        db<RTL8139>(WRN) << "\tTX wait is over" << _tx_head << endl;
     }
 
     new (buf->frame()) Frame(_address, dst, prot, data, size);
@@ -181,6 +182,10 @@ void RTL8139::handle_int()
         NetService::resume();
     }
 
+    if (status & RX_OVERFLOW) {
+        db<RTL8139>(WRN) << "\tOVERFLOW in RX!" << endl;
+    }
+
     // Acknowledge interrupt
     CPU::out16(_io_port + ISR, status);
 }
@@ -196,6 +201,18 @@ void RTL8139::int_handler(const IC::Interrupt_Id & interrupt)
         db<RTL8139>(WRN) << "RTL8139::int_handler: handler not assigned!" << endl;
     else
         dev->handle_int();
+}
+
+// For testing purposes
+
+void RTL8139::disable_int()
+{
+    IC::disable(IC::irq2int(_irq));
+}
+
+void RTL8139::enable_int()
+{
+    IC::enable(IC::irq2int(_irq));
 }
 
 __END_SYS
