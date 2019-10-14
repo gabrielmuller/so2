@@ -1,3 +1,0 @@
-[console_scripts]
-gateway_daemon = gateway_daemon.__main__:run
-
