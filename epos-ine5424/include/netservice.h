@@ -16,7 +16,7 @@ public:
     static int start();
     static void suspend();
     static void resume();
-    static void insert_buffer(const Ethernet::Buffer * buf);
+    static void insert_buffer(Ethernet::Buffer * buf);
     static Ethernet::Buffer * remove_buffer();
     static int receive(Address * src, Protocol * prot, void * data, unsigned int size);
     static int send(const Address & dst, const Protocol & prot, const void * data, unsigned int size);
