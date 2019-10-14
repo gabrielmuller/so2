@@ -53,7 +53,7 @@ int main()
         }
     } else {
         jammer = new Thread(
-                Thread::Configuration(Thread::RUNNING, Thread::HIGH), 
+                Thread::Configuration(Thread::RUNNING, -4), 
                 &jam_interrupt,
                 (RTL8139 *) nic,
                 6137U
