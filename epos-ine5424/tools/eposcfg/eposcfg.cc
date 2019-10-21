@@ -22,7 +22,7 @@ using namespace EPOS::S::U;
 
 // Constants
 const unsigned int TOKENS = 24;
-const unsigned int COMPONENTS = 61;
+const unsigned int COMPONENTS = 62;
 const unsigned int STRING_SIZE = 128;
 
 // Configuration tokens (integer tokens first, marked by INT_TOKENS)
@@ -84,6 +84,7 @@ char components[COMPONENTS][STRING_SIZE] = {
     "Ethernet",
     "IEEE802_15_4",
     "PCNet32",
+    "RTL8139",
     "C905",
     "E100",
     "CC2538",
@@ -342,6 +343,7 @@ void populate_strings()
     if(Traits<Ethernet>::enabled)       enable_component("Ethernet");
     if(Traits<IEEE802_15_4>::enabled)   enable_component("IEEE802_15_4");
     if(Traits<PCNet32>::enabled)        enable_component("PCNet32");
+    if(Traits<RTL8139>::enabled)        enable_component("RTL8139");
     if(Traits<C905>::enabled)           enable_component("C905");
     if(Traits<E100>::enabled)           enable_component("E100");
     if(Traits<CC2538>::enabled)         enable_component("CC2538");

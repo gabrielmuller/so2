@@ -142,11 +142,23 @@ template<> struct Traits<Scratchpad>: public Traits<Machine_Common>
 
 template<> struct Traits<Ethernet>: public Traits<Machine_Common>
 {
-    typedef LIST<PCNet32> DEVICES;
+    typedef LIST<RTL8139> DEVICES;
     static const unsigned int UNITS = DEVICES::Length;
 
     static const bool enabled = (Traits<Build>::NODES > 1) && (UNITS > 0);
+    static const bool debugged = true;
 };
+
+template<> struct Traits<RTL8139>: public Traits<Machine_Common>
+{
+    static const unsigned int UNITS = Traits<Ethernet>::DEVICES::Count<RTL8139>::Result;
+    static const unsigned int SEND_BUFFERS = 64; // per unit
+    static const unsigned int RECEIVE_BUFFERS = 256; // per unit
+
+    static const bool enabled = (Traits<Build>::NODES > 1) && (UNITS > 0);
+    static const bool promiscuous = false;
+};
+
 
 template<> struct Traits<PCNet32>: public Traits<Machine_Common>
 {
@@ -155,7 +167,6 @@ template<> struct Traits<PCNet32>: public Traits<Machine_Common>
     static const unsigned int RECEIVE_BUFFERS = 256; // per unit
 
     static const bool enabled = (Traits<Build>::NODES > 1) && (UNITS > 0);
-
     static const bool promiscuous = false;
 };
 

@@ -6,6 +6,7 @@
 #include <machine/machine.h>
 #include <machine/nic.h>
 #include "pcnet32.h"
+#include "rtl8139.h"
 #include "e100.h"
 #include "c905.h"
 

@@ -87,10 +87,13 @@ PCI::Locator PCI::scan(const PCI::Vendor_Id & v, const PCI::Device_Id & d, int o
     db<PCI>(TRC) << "PCI::scan(vend=" << v << ",dev=" << d << ",order=" << order << ")" << endl;
 
     for(int bus = 0 ; bus <= MAX_BUS; bus++)
-        for(int dfn = 0; dfn <= MAX_DEV_FN; dfn++)
+        for(int dfn = 0; dfn <= MAX_DEV_FN; dfn++) {
+            if (vendor_id(bus, dfn) != 0xffff || device_id(bus, dfn) != 0xffff)
+            db<PCI>(TRC) << "(" << vendor_id(bus, dfn) << ", " << device_id(bus, dfn) << ")\n";
             if((vendor_id(bus, dfn) == v) && (device_id(bus, dfn) == d))
         	if(!order--)
         	    return Locator(bus, dfn);
+        }
 
     return Locator(Locator::INVALID, Locator::INVALID);
 }
