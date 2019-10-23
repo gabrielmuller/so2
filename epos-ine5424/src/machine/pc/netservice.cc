@@ -6,6 +6,7 @@ Thread * NetService::self;
 bool NetService::suspended;
 NIC<Ethernet> * NetService::nic;
 Ethernet::Buffer::List NetService::received;
+Hash<Ethernet::Buffer::List, 10> NetService::ports;
 
 int NetService::start() 
 {
@@ -31,26 +32,31 @@ void NetService::resume()
     }
 }
 
-void NetService::insert_buffer(Ethernet::Buffer * buf) {
-    const Ethernet::Frame * frame = buf->frame();
-
+void NetService::insert_buffer(const Ethernet::Buffer * buf) {
     // Discard other protocols
     if (frame->prot() != 0x8888) return;
-
+    
+    // TODO remove port from buf->frame->data
+    const unsigned int port = 1;
+    if (!ports.search_key(port)) {
+        db<NetService>(WRN) << "Creating new port " << port << endl;
+        ports.insert(new Hash<Ethernet::Buffer::List, 10>::Element(new Ethernet::Buffer::List(), port));
+    }
     received.insert(new Ethernet::Buffer::List::Element(buf));
-    db<NetService>(WRN) << "queue size " << received.size() << endl;
+    db<NetService>(TRC) << "queue size " << received.size() << endl;
 }
 
-Ethernet::Buffer * NetService::remove_buffer() {
-    db<NetService>(WRN) << "removed queue size " << received.size() << endl;
+Ethernet::Buffer * NetService::remove_buffer(unsigned int port) {
+    // TODO: remove from port list
+    db<NetService>(TRC) << "removed queue size " << received.size() << endl;
     return received.remove()->object();
 }
 
-int NetService::receive(Address * src, Protocol * prot, void * data, unsigned int size) 
+int NetService::receive(Address * src, Protocol * prot, unsigned int port, void * data, unsigned int size) 
 {
-    if (received.empty())
+    if (received.empty()) // TODO: check buffer list
         suspend();
-    Ethernet::Buffer * buf = remove_buffer();
+    Ethernet::Buffer * buf = remove_buffer(port);
     Ethernet::Frame * frame = buf->frame();
     *src = frame->src();
     *prot = frame->prot();
@@ -58,8 +64,14 @@ int NetService::receive(Address * src, Protocol * prot, void * data, unsigned in
     return size;
 }
 
-int NetService::send(const Address & dst, const Protocol & prot, const void * data, unsigned int size)
-{
+int NetService::send(const Address & dst, const Protocol & prot, unsigned int port, 
+    const void * data, unsigned int size)
+{   
+    if (!ports.search_key(port)) {
+        db<NetService>(WRN) << "Creating new port " << port << endl;
+        ports.insert(new Hash<Ethernet::Buffer::List, 10>::Element(new Ethernet::Buffer::List(), port));
+    }
+    // TODO: add port to data
     return nic->send(dst, prot, data, size);
 }
 

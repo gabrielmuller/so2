@@ -28,12 +28,12 @@ int main()
         for(int i = 0; i < 100; i++) {
             memset(data, '0' + (i % 10), nic->mtu());
             data[nic->mtu() - 1] = '\n';
-            NetService::send(nic->broadcast(), 0x8888, data, nic->mtu());
+            NetService::send(nic->broadcast(), 0x8888, 1, data, nic->mtu());
         }
     } else {
         for(int i = 0; i < 100; i++) {
-           NetService::receive(&src, &prot, data, nic->mtu());
-           cout << "  Data: " << data << endl;
+           NetService::receive(&src, &prot, 1, data, nic->mtu());
+           //cout << "  Data: " << data << endl;
            cout << "  prot: " << hex << prot << endl;
            cout << "  src: " << src << endl;
         }
