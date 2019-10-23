@@ -1,4 +1,4 @@
-// EPOS NIC Test Programs
+// EPOS Port Test Programs
 
 #include <machine/nic.h>
 #include <time.h>
@@ -10,14 +10,14 @@ OStream cout;
 
 int main()
 {
-    cout << "NIC Test" << endl;
+    cout << "Port Test" << endl;
 
     NetService::start();
 
     NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
     NIC<Ethernet>::Address src, dst;
     NIC<Ethernet>::Protocol prot;
-    char data[nic->mtu()];
+    char data[100];
 
     NIC<Ethernet>::Address self = nic->address();
     cout << "  MAC: " << self << endl;
@@ -25,14 +25,14 @@ int main()
     if(self[5] % 2) { // sender
         Delay (5000000);
 
-        for(int i = 0; i < 100; i++) {
-            memset(data, '0' + (i % 10), nic->mtu());
-            data[nic->mtu() - 1] = '\n';
-            NetService::send(nic->broadcast(), 0x8888, data, nic->mtu());
+        for(int i = 0; i < 5; i++) {
+            memset(data, '0' + (i % 10), 100);
+            data[100 - 1] = '\n';
+            NetService::send(nic->broadcast(), 0x8888, 15, data, 100);
         }
     } else {
-        for(int i = 0; i < 100; i++) {
-           NetService::receive(&src, &prot, data, nic->mtu());
+        for(int i = 0; i < 5; i++) {
+           NetService::receive(&src, &prot, 15, data, 100);
            cout << "  Data: " << data << endl;
            cout << "  prot: " << hex << prot << endl;
            cout << "  src: " << src << endl;
