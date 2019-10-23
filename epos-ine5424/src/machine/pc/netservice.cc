@@ -32,7 +32,9 @@ void NetService::resume()
     }
 }
 
-void NetService::insert_buffer(const Ethernet::Buffer * buf) {
+void NetService::insert_buffer(Ethernet::Buffer * buf) {
+    const Ethernet::Frame * frame = buf->frame();
+
     // Discard other protocols
     if (frame->prot() != 0x8888) return;
     
