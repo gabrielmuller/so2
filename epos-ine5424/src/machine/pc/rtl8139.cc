@@ -179,7 +179,6 @@ void RTL8139::handle_int()
             )
             receive();
 
-        NetService::resume();
     }
 
     if (status & RX_OVERFLOW) {
