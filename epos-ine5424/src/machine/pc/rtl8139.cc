@@ -5,9 +5,14 @@
 #include <process.h>
 #include <system.h>
 #include <time.h>
-#include <netservice.h>
 
 __BEGIN_SYS
+
+namespace NetService {
+    // Avoid circular includes
+    void insert_buffer(RTL8139::Buffer * buf);
+}
+
 
 // Class attributes
 RTL8139::Device RTL8139::_devices[UNITS];
@@ -143,11 +148,11 @@ void RTL8139::handle_int()
      * but in certain cases it might handle several frames or none at all.
      */
     unsigned short status = CPU::in16(_io_port + ISR);
-    db<RTL8139>(WRN) << "INTERRUPT STATUS " << status << endl;
+    db<RTL8139>(TRC) << "INTERRUPT STATUS " << status << endl;
 
     if (status & TOK) {
         // Transmit completed successfully, release descriptor
-        db<RTL8139>(WRN) << "TOK" << endl;
+        db<RTL8139>(TRC) << "TOK" << endl;
         bool transmitted = false;
         for (unsigned char i = 0; i < TX_BUFFER_NR; i++) {
             // While descriptors have TOK status, release and advance tail
@@ -158,7 +163,7 @@ void RTL8139::handle_int()
                 // Clear TOK status
                 CPU::out32(_io_port + TRSTATUS + _tx_tail * 4, status & ~STATUS_TOK);
 
-                db<RTL8139>(WRN) << "\tTOK unlocked " << _tx_tail << endl;
+                db<RTL8139>(TRC) << "\tTOK unlocked " << _tx_tail << endl;
                 _tx_tail = (_tx_tail + 1) % TX_BUFFER_NR;
                 transmitted = true;
             } else break;
@@ -172,7 +177,7 @@ void RTL8139::handle_int()
 
     if (status & ROK) {
         // NIC received frame(s)
-        db<RTL8139>(WRN) << "ROK" << endl;
+        db<RTL8139>(TRC) << "ROK" << endl;
 
         while ((CPU::in16(_io_port + CBR) < _rx_read) || 
             ((_rx_read + sizeof(Frame)) < CPU::in16(_io_port + CBR))
@@ -194,7 +199,7 @@ void RTL8139::int_handler(const IC::Interrupt_Id & interrupt)
 {
     RTL8139 * dev = get_by_interrupt(interrupt);
 
-    db<RTL8139>(WRN) << "RTL8139::int_handler(int=" << interrupt << ",dev=" << dev << ")" << endl;
+    db<RTL8139>(TRC) << "RTL8139::int_handler(int=" << interrupt << ",dev=" << dev << ")" << endl;
 
     if(!dev)
         db<RTL8139>(WRN) << "RTL8139::int_handler: handler not assigned!" << endl;
