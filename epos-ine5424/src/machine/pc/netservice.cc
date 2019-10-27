@@ -1,8 +1,8 @@
 #include <netservice.h>
+#include <time.h>
 
 __BEGIN_SYS
 
-static const unsigned short HEADER_SIZE = sizeof(NetService::FrameHeader);
 
 NIC<Ethernet> * NetService::nic;
 Hash<NetService::PortState, 10> NetService::ports;
@@ -22,10 +22,16 @@ void NetService::insert_buffer(RxBuffer * buf) {
     if (frame->prot() != 0x8888) return;
     
     FrameHeader header = buf->frame()->data<FrameHeader>()[0];
+    PortState * state = port_state(header.port);
+
+    if (header.flag == FrameHeader::ACK) {
+        db<NetService>(WRN) << "ACK received" << header.port << endl;
+        state->resume();
+        return;
+    }
 
     db<NetService>(WRN) << "Insert buffer from port " << header.port << endl;
 
-    PortState * state = port_state(header.port);
     state->queue.insert(new RxQueue::Element(buf));
     state->resume();
     db<NetService>(WRN) << "Port " << header.port << " queue size " << state->queue.size() << endl;
@@ -45,33 +51,66 @@ RxBuffer * NetService::remove_buffer(unsigned int port) {
 int NetService::receive(Address * src, Protocol * prot, unsigned short port,
         void * data, unsigned int size) 
 {
-    RxBuffer * buf = remove_buffer(port);
-    Ethernet::Frame * frame = buf->frame();
+    RxBuffer * buf;
+    Ethernet::Frame * frame;
+    PortState * state = port_state(port);
+    while (true) {
+        buf = remove_buffer(port);
+        frame = buf->frame();
+        FrameHeader& header = buf->frame()->data<FrameHeader>()[0];
+
+        if (header.id < state->recv_id) {
+            db<NetService>(WRN) << "Duplicate packet id " << header.id << endl;
+        } else if (header.id > state->recv_id) {
+            // Skips packets, reordering packets is out of scope for this project
+            db<NetService>(WRN) << "Out of order packet id " << header.id << " " << state->recv_id << endl;
+        } else break;
+    }
+
     *src = frame->src();
     *prot = frame->prot();
-    FrameHeader header = buf->frame()->data<FrameHeader>()[0];
     memcpy(data, frame->data<char>() + HEADER_SIZE, size);
-    // TODO: send ack
-    db<NetService>(WRN) << "Receiving package id " << header.id << endl;
+
+    db<NetService>(WRN) << "Receiving package id " << state->recv_id << endl;
+
+    // Send ACK
+    {
+        db<NetService>(WRN) << "Send ACK through port " << port << endl;
+        FrameHeader header = FrameHeader{port, state->recv_id, FrameHeader::ACK};
+        nic->send(*src, *prot, &header, HEADER_SIZE);
+    }
+
+    state->recv_id++;
     return size;
+}
+
+void NetService::timeout() 
+{
+    db<NetService>(WRN) << "Timeout\n" << endl;
 }
 
 int NetService::send(const Address & dst, const Protocol & prot, 
         unsigned short port, const void * data, unsigned int size)
 {   
-    PortState * state = port_state(port); // Create port state if non existant
+    PortState * state = port_state(port);
 
     db<NetService>(WRN) << "Send through port " << port << endl;
     
-    FrameHeader header = FrameHeader{port, state->frame_id};
+    FrameHeader header = FrameHeader{port, state->send_id, FrameHeader::NONE};
     char buffer[size + HEADER_SIZE];
     memcpy(buffer, &header, HEADER_SIZE);
     memcpy(buffer + HEADER_SIZE, data, size);
     
     db<NetService>(WRN) << "Data " << buffer + HEADER_SIZE << endl;
     
-    state->frame_id++;
-    return nic->send(dst, prot, buffer, size + HEADER_SIZE);
+    state->send_id++;
+
+    Function_Handler fh(&timeout);
+
+    int ret = nic->send(dst, prot, buffer, size + HEADER_SIZE);
+    Alarm(1000000, &fh);
+    state->suspend();
+    return ret;
 }
 
 __END_SYS
