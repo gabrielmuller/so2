@@ -11,14 +11,16 @@ typedef Ethernet::Buffer RxBuffer;
 typedef RxBuffer::List RxQueue;
 
 static const unsigned short PORT = sizeof(unsigned short);
+static const unsigned short PCKG_ID = sizeof(unsigned short);
 
 class NetService {
     struct PortState {
         RxQueue queue;    // Received buffers queue
         short retx_left;  // How many retransmissions left
         Thread * waiting; // Used to block receiving thread when queue is empty
+        short pckg_id;
 
-        PortState() : retx_left(3), waiting(nullptr) {}
+        PortState() : retx_left(3), waiting(nullptr), pckg_id(0) {}
 
         void suspend() {
             waiting = Thread::self();
