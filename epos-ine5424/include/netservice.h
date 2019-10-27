@@ -10,17 +10,14 @@ typedef NIC<Ethernet>::Protocol Protocol;
 typedef Ethernet::Buffer RxBuffer;
 typedef RxBuffer::List RxQueue;
 
-static const unsigned short PORT = sizeof(unsigned short);
-static const unsigned short PCKG_ID = sizeof(unsigned short);
-
 class NetService {
     struct PortState {
-        RxQueue queue;    // Received buffers queue
-        short retx_left;  // How many retransmissions left
-        Thread * waiting; // Used to block receiving thread when queue is empty
-        short pckg_id;
+        RxQueue queue;              // Received buffers queue
+        short retx_left;            // How many retransmissions left
+        Thread * waiting;           // Used to block receiving thread when queue is empty
+        unsigned short frame_id;    // Next Frame id
 
-        PortState() : retx_left(3), waiting(nullptr), pckg_id(0) {}
+        PortState() : retx_left(3), waiting(nullptr), frame_id(0) {}
 
         void suspend() {
             waiting = Thread::self();
@@ -44,6 +41,11 @@ class NetService {
     static NIC<Ethernet> * nic;
     friend class RTL8139;
 public:
+    struct FrameHeader {
+        unsigned short port;
+        unsigned short id;
+    };
+
     static int receive(Address * src, Protocol * prot, unsigned short port, void * data, unsigned int size);
     static int send(const Address & dst, const Protocol & prot, const unsigned short port, const void * data, unsigned int size);
 };

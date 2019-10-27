@@ -2,6 +2,8 @@
 
 __BEGIN_SYS
 
+static const unsigned short HEADER_SIZE = sizeof(NetService::FrameHeader);
+
 NIC<Ethernet> * NetService::nic;
 Hash<NetService::PortState, 10> NetService::ports;
 
@@ -19,14 +21,14 @@ void NetService::insert_buffer(RxBuffer * buf) {
     // Discard other protocols
     if (frame->prot() != 0x8888) return;
     
-    unsigned short port = buf->frame()->data<unsigned short>()[0];
+    FrameHeader header = buf->frame()->data<FrameHeader>()[0];
 
-    db<NetService>(WRN) << "Insert buffer from port " << port << endl;
+    db<NetService>(WRN) << "Insert buffer from port " << header.port << endl;
 
-    PortState * state = port_state(port);
+    PortState * state = port_state(header.port);
     state->queue.insert(new RxQueue::Element(buf));
     state->resume();
-    db<NetService>(WRN) << "Port " << port << " queue size " << state->queue.size() << endl;
+    db<NetService>(WRN) << "Port " << header.port << " queue size " << state->queue.size() << endl;
 }
 
 RxBuffer * NetService::remove_buffer(unsigned int port) {
@@ -47,27 +49,29 @@ int NetService::receive(Address * src, Protocol * prot, unsigned short port,
     Ethernet::Frame * frame = buf->frame();
     *src = frame->src();
     *prot = frame->prot();
-    memcpy(data, frame->data<char>() + PORT + PCKG_ID, size);
+    FrameHeader header = buf->frame()->data<FrameHeader>()[0];
+    memcpy(data, frame->data<char>() + HEADER_SIZE, size);
     // TODO: send ack
-    unsigned short pckg_id = frame->data<unsigned short>()[1];
-    db<NetService>(WRN) << "Receiving package id " << pckg_id << endl;
+    db<NetService>(WRN) << "Receiving package id " << header.id << endl;
     return size;
 }
 
 int NetService::send(const Address & dst, const Protocol & prot, 
         unsigned short port, const void * data, unsigned int size)
 {   
-    auto port_st = port_state(port); // Create port state if non existant
+    PortState * state = port_state(port); // Create port state if non existant
 
     db<NetService>(WRN) << "Send through port " << port << endl;
     
-    char buffer[size + PORT + PCKG_ID];
-    memcpy(buffer, &port, PORT);
-    memcpy(buffer + PORT, &(port_st->pckg_id), PCKG_ID);
-    memcpy(buffer + PORT + PCKG_ID, data, size);
-    db<NetService>(WRN) << "Data " << buffer + PORT + PCKG_ID << endl;
-    port_st->pckg_id++;
-    return nic->send(dst, prot, buffer, size + PORT + PCKG_ID);
+    FrameHeader header = FrameHeader{port, state->frame_id};
+    char buffer[size + HEADER_SIZE];
+    memcpy(buffer, &header, HEADER_SIZE);
+    memcpy(buffer + HEADER_SIZE, data, size);
+    
+    db<NetService>(WRN) << "Data " << buffer + HEADER_SIZE << endl;
+    
+    state->frame_id++;
+    return nic->send(dst, prot, buffer, size + HEADER_SIZE);
 }
 
 __END_SYS
