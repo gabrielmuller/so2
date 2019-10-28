@@ -90,9 +90,9 @@ int NetService::receive(Address * src, Protocol * prot, unsigned short port,
     return size;
 }
 
-void NetService::timeout() 
+void NetService::timeout(unsigned short port, unsigned short id) 
 {
-    db<RTL8139>(WRN) << "Timeout " << Thread::self() << endl;
+    db<RTL8139>(WRN) << "Timeout port " << port << " id " << id << endl;
 }
 
 int NetService::send(const Address & dst, const Protocol & prot, 
@@ -109,13 +109,16 @@ int NetService::send(const Address & dst, const Protocol & prot,
     
     db<RTL8139>(WRN) << "Sending data: \"" << buffer + HEADER_SIZE << "\"" << endl;
     
-    state->send_id++;
-
-    Function_Handler fh(&timeout);
 
     int ret = nic->send(dst, prot, buffer, size + HEADER_SIZE);
-    Alarm timeout_alarm(1000000, &fh);
+
+    Timeout_Handler th(&timeout, port, state->send_id);
+    Alarm timeout_alarm(1000000, &th);
+
     db<RTL8139>(WRN) << "Create timeout " << &timeout_alarm << endl;
+
+    state->send_id++;
+
     state->tx_mut.p();
     return ret;
 }

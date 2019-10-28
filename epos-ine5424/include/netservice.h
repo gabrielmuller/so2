@@ -12,6 +12,19 @@ typedef NIC<Ethernet>::Protocol Protocol;
 typedef Ethernet::Buffer RxBuffer;
 typedef RxBuffer::List RxQueue;
 
+class Timeout_Handler: public Handler
+{
+public:
+    Timeout_Handler(void (* h)(unsigned short, unsigned short), unsigned short port, unsigned short id)
+            : _handler(h), port(port), id(id) {}
+    ~Timeout_Handler() {}
+    void operator()() { _handler(port, id); }
+private:
+    void (* _handler)(unsigned short, unsigned short);
+    const unsigned short port;
+    const unsigned short id;
+};
+
 namespace NetService {
     struct PortState {
         RxQueue queue;              // Received buffers queue
@@ -39,7 +52,7 @@ namespace NetService {
     PortState * port_state(unsigned short port);
     void insert_buffer(RxBuffer * buf);
     RxBuffer * remove_buffer(unsigned int port);
-    void timeout();
+    void timeout(unsigned short, unsigned short);
 
     extern Hash<PortState, 10> ports;
     extern NIC<Ethernet> * nic;

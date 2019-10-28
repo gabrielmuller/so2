@@ -58,12 +58,13 @@ void RTL8139::receive()
 
 
     unsigned int * rx = (unsigned int *) (_rx_buffer + _rx_read);
+    db<RTL8139>(WRN) << "\t(NIC) rx=" << rx << endl;
     unsigned int header = *rx;
+    db<RTL8139>(WRN) << "\t(NIC) header=" << hex << header << endl;
     unsigned int packet_len = (header >> 16);
     unsigned int status = header & 0xffff;
     rx++;
 
-    db<RTL8139>(TRC) << "rx_head=" << rx << endl;
     db<RTL8139>(TRC) << "packet_len=" << packet_len << endl;
     db<RTL8139>(TRC) << "status=" << status << endl;
 
@@ -175,6 +176,12 @@ void RTL8139::handle_int()
         }
     }
 
+    if (status & RX_OVERFLOW) {
+        db<RTL8139>(WRN) << "\tOVERFLOW in RX!" << endl;
+        CPU::out16(_io_port + ISR, RX_OVERFLOW);
+
+    }
+
     if (status & ROK) {
         // NIC received frame(s)
         db<RTL8139>(TRC) << "ROK" << endl;
@@ -184,10 +191,6 @@ void RTL8139::handle_int()
             )
             receive();
 
-    }
-
-    if (status & RX_OVERFLOW) {
-        db<RTL8139>(WRN) << "\tOVERFLOW in RX!" << endl;
     }
 
     // Acknowledge interrupt
