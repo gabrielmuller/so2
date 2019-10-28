@@ -15,14 +15,21 @@ typedef RxBuffer::List RxQueue;
 class Timeout_Handler: public Handler
 {
 public:
-    Timeout_Handler(void (* h)(unsigned short, unsigned short), unsigned short port, unsigned short id)
-            : _handler(h), port(port), id(id) {}
+    Timeout_Handler(void (* h)(unsigned short, unsigned short,
+        const Address &, const Protocol &, const void *, unsigned int), 
+        unsigned short port, unsigned short id,
+        const Address & dst, const Protocol & prot, const void * data, unsigned int size)
+            : _handler(h), port(port), id(id), dst(dst), prot(prot), data(data), size(size) {}
     ~Timeout_Handler() {}
-    void operator()() { _handler(port, id); }
+    void operator()() { _handler(port, id, dst, prot, data, size); }
 private:
-    void (* _handler)(unsigned short, unsigned short);
+    void (* _handler)(unsigned short, unsigned short, const Address &, const Protocol &, const void *, unsigned int);
     const unsigned short port;
     const unsigned short id;
+    const Address & dst;
+    const Protocol & prot;
+    const void * data;
+    unsigned int size;
 };
 
 namespace NetService {
@@ -52,7 +59,7 @@ namespace NetService {
     PortState * port_state(unsigned short port);
     void insert_buffer(RxBuffer * buf);
     RxBuffer * remove_buffer(unsigned int port);
-    void timeout(unsigned short, unsigned short);
+    void timeout(unsigned short port, unsigned short id, const Address & dst, const Protocol & prot, const void * data, unsigned int size);
 
     extern Hash<PortState, 10> ports;
     extern NIC<Ethernet> * nic;

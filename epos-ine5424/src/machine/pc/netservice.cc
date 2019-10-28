@@ -6,7 +6,7 @@ __BEGIN_SYS
 NIC<Ethernet> * NetService::nic;
 Hash<NetService::PortState, 10> NetService::ports;
 
-NetService::PortState::PortState() : retx_left(3), rx_sem(0), tx_mut(0),
+NetService::PortState::PortState() : retx_left(Traits<Network>::RETRIES), rx_sem(0), tx_mut(0),
                 send_id(0), recv_id(0), alarm_id(0), ack_id(0) {}
 
 NetService::PortState * NetService::port_state(unsigned short port) {
@@ -90,9 +90,25 @@ int NetService::receive(Address * src, Protocol * prot, unsigned short port,
     return size;
 }
 
-void NetService::timeout(unsigned short port, unsigned short id) 
+void NetService::timeout(unsigned short port, unsigned short id, const Address & dst, const Protocol & prot, const void * data, unsigned int size) 
 {
     db<RTL8139>(WRN) << "Timeout port " << port << " id " << id << endl;
+    PortState * state = port_state(port);
+
+    if (id < state->ack_id) {
+        db<RTL8139>(WRN) << "Timeout ack received port " << port << " id " << id << endl;
+        return;
+    }
+
+    if (state->retx_left < 0) {
+        db<RTL8139>(WRN) << "Out of retransmissions port " << port << " id " << id << endl;
+        return;
+    }
+
+    db<RTL8139>(WRN) << "Retransmit port " << port << " id " << id << endl;
+    state->retx_left--;
+
+    nic->send(dst, prot, data, size + HEADER_SIZE);
 }
 
 int NetService::send(const Address & dst, const Protocol & prot, 
@@ -109,11 +125,18 @@ int NetService::send(const Address & dst, const Protocol & prot,
     
     db<RTL8139>(WRN) << "Sending data: \"" << buffer + HEADER_SIZE << "\"" << endl;
     
+    int ret = 0;
 
-    int ret = nic->send(dst, prot, buffer, size + HEADER_SIZE);
+    // Simulating a send failure 
+    // TODO: remove or something
+    if (state->send_id == 1) {
+        db<RTL8139>(WRN) << "Failed to send frame id " << state->send_id << " port " << port << endl;
+    } else {
+        ret = nic->send(dst, prot, buffer, size + HEADER_SIZE);
+    }
 
-    Timeout_Handler th(&timeout, port, state->send_id);
-    Alarm timeout_alarm(1000000, &th);
+    Timeout_Handler th(&timeout, port, state->send_id, dst, prot, buffer, size);
+    Alarm timeout_alarm(Traits<Network>::TIMEOUT * 100000, &th);
 
     db<RTL8139>(WRN) << "Create timeout " << &timeout_alarm << endl;
 
