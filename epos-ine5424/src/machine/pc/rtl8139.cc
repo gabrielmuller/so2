@@ -58,9 +58,9 @@ void RTL8139::receive()
 
 
     unsigned int * rx = (unsigned int *) (_rx_buffer + _rx_read);
-    db<RTL8139>(WRN) << "\t(NIC) rx=" << rx << endl;
+    db<RTL8139>(TRC) << "rx=" << rx << endl;
     unsigned int header = *rx;
-    db<RTL8139>(WRN) << "\t(NIC) header=" << hex << header << endl;
+    db<RTL8139>(TRC) << "header=" << hex << header << endl;
     unsigned int packet_len = (header >> 16);
     unsigned int status = header & 0xffff;
     rx++;

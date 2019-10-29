@@ -43,7 +43,6 @@ namespace NetService {
 
         unsigned int send_id;     // ID of next frame to send
         unsigned int recv_id;     // ID of next frame to receive
-        unsigned int alarm_id;    // ID of next frame a timeout will process
         unsigned int ack_id;      // ID of next frame to be acknowledged
 
         PortState();

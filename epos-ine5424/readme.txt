@@ -1,22 +1,19 @@
-# RTL8139 driver + comunicador NetService
+# Simple cross-layer protocol
 
 ## Como testar
 
-    make APPLICATION=some_test run
+    make APPLICATION=port_test run
 
-Onde "some_test" é o nome do teste.
+## Teste
 
-## Testes
+O port_test envia 5 mensagens a 5 ports (25 pacotes no total), intercalando os
+ports.
 
-Os testes disponíveis são:
+O port 0 simula uma perda total de pacote. O comportamento esperado é 
+retransmitir três vezes e em seguida uma falha é detectada na aplicação.
+O loop receive pula o port 0, já que nenhum pacote é recebido.
 
-* nic_test (adaptado): Envia 100 pacotes, com números de 0 a 9, 10 vezes.
+O port 1 simula um canal lento. O comportamento esperado é retransmitir uma ou
+duas vezes até haver sucesso.
 
-* interop_test: Envia 200 pacotes, metade é lixo IP. Apenas os 100 pacotes relevantes são recebidos.
-
-* dma_test: Compara o tempo de execução de uma aplicação CPU-bound fazendo ou não transferências DMA.
-
-* overflow_test: Executa o nic_test junto com uma thread que desabilita interrupções periodicamente, forçando overflows RX e TX.
-
-A comunicação entre QEMUs e as interrupções são observadas em todos os testes.
-Todos testes usam o comunicador NetService criado.
+Os ports de 2 a 4 funcionam normalmente.

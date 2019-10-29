@@ -216,6 +216,8 @@ template<> struct Traits<Network>: public Traits<void>
     static const unsigned int RETRIES = 3;
     static const unsigned int TIMEOUT = 10; // s
 
+    static const bool SEND_FAULT = false;
+
     typedef LIST<IP> NETWORKS;
 };
 

@@ -7,7 +7,7 @@ NIC<Ethernet> * NetService::nic;
 Hash<NetService::PortState, 10> NetService::ports;
 
 NetService::PortState::PortState() : retx_left(Traits<Network>::RETRIES), rx_sem(0), tx_mut(0),
-                send_id(0), recv_id(0), alarm_id(0), ack_id(0) {}
+    send_id(0), recv_id(0), ack_id(0) {}
 
 NetService::PortState * NetService::port_state(unsigned short port) {
     if (!ports.search_key(port)) {
@@ -40,17 +40,15 @@ void NetService::insert_buffer(RxBuffer * buf) {
         return;
     }
 
-    db<RTL8139>(WRN) << "Insert buffer from port " << header.port << endl;
-
     state->queue.insert(new RxQueue::Element(buf));
     state->rx_sem.v();
-    db<RTL8139>(WRN) << "Port " << header.port << " queue size " << state->queue.size() << endl;
+    db<RTL8139>(WRN) << "Port " << header.port << " inserted, queue size " << state->queue.size() << endl;
 }
 
 RxBuffer * NetService::remove_buffer(unsigned int port) {
     PortState * state = port_state(port);
     state->rx_sem.p();
-    db<RTL8139>(WRN) << "Port " << port << " removed queue size " << state->queue.size() << endl;
+    db<RTL8139>(WRN) << "Port " << port << " removed, queue size " << state->queue.size() << endl;
     return state->queue.remove()->object();
 }
 
@@ -100,15 +98,20 @@ void NetService::timeout(unsigned short port, unsigned short id, const Address &
         return;
     }
 
-    if (state->retx_left < 0) {
+    if (state->retx_left <= 0) {
         db<RTL8139>(WRN) << "Out of retransmissions port " << port << " id " << id << endl;
+        state->tx_mut.v();
         return;
     }
 
     db<RTL8139>(WRN) << "Retransmit port " << port << " id " << id << endl;
     state->retx_left--;
 
-    nic->send(dst, prot, data, size + HEADER_SIZE);
+    nic->send(dst, prot, data, size);
+
+    /* Set alarm again */
+    Timeout_Handler * th = new Timeout_Handler(&timeout, port, id, dst, prot, data, size);
+    new Alarm(Traits<Network>::TIMEOUT * 1000000, th);
 }
 
 int NetService::send(const Address & dst, const Protocol & prot, 
@@ -116,34 +119,41 @@ int NetService::send(const Address & dst, const Protocol & prot,
 {   
     PortState * state = port_state(port);
 
-    db<RTL8139>(WRN) << "Send through port " << port << endl;
+    db<RTL8139>(TRC) << "Send through port " << port << endl;
     
     FrameHeader header = FrameHeader{port, state->send_id, FrameHeader::NONE};
     char buffer[size + HEADER_SIZE];
     memcpy(buffer, &header, HEADER_SIZE);
     memcpy(buffer + HEADER_SIZE, data, size);
     
-    db<RTL8139>(WRN) << "Sending data: \"" << buffer + HEADER_SIZE << "\"" << endl;
+    db<RTL8139>(TRC) << "Sending data: \"" << buffer + HEADER_SIZE << "\"" << endl;
     
-    int ret = 0;
+    Timeout_Handler th(&timeout, port, state->send_id, dst, prot, buffer, size);
+    Alarm timeout_alarm(Traits<Network>::TIMEOUT * 1000000, &th);
 
-    // Simulating a send failure 
-    // TODO: remove or something
-    if (state->send_id == 1) {
-        db<RTL8139>(WRN) << "Failed to send frame id " << state->send_id << " port " << port << endl;
+    /* Simulating a send failure */
+    if (Traits<Network>::SEND_FAULT && port == 0) {
+        /* Port 0 fails to send. */
+        db<RTL8139>(WRN) << "(Fault injection) Failed to send frame id " 
+        << state->send_id << " port " << port << endl;
+    } else if (Traits<Network>::SEND_FAULT && port == 1) {
+        /* Port 1 is slow (takes 1.5x timeout time), but sends eventually. */
+        Delay(Traits<Network>::TIMEOUT * 1500000);
+        nic->send(dst, prot, buffer, size + HEADER_SIZE);
     } else {
-        ret = nic->send(dst, prot, buffer, size + HEADER_SIZE);
+        /* Ports 2 to 4 work properly. */
+        nic->send(dst, prot, buffer, size + HEADER_SIZE);
     }
 
-    Timeout_Handler th(&timeout, port, state->send_id, dst, prot, buffer, size);
-    Alarm timeout_alarm(Traits<Network>::TIMEOUT * 100000, &th);
-
-    db<RTL8139>(WRN) << "Create timeout " << &timeout_alarm << endl;
-
     state->send_id++;
-
     state->tx_mut.p();
-    return ret;
+
+    if (state->retx_left > 0)
+        return size; // Awaken by ACK (success)
+    else {
+        state->retx_left = Traits<Network>::RETRIES;
+        return 0;    // Awaken by max retries (failure)
+    }
 }
 
 __END_SYS
