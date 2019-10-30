@@ -64,7 +64,7 @@ int NetService::receive(Address * src, Protocol * prot, unsigned short port,
         FrameHeader& header = buf->frame()->data<FrameHeader>()[0];
 
         if (header.id < state->recv_id) {
-            db<RTL8139>(WRN) << "Duplicate packet id " << header.id << endl;
+            db<RTL8139>(WRN) << "Duplicate packet port " << port << " id " << header.id << endl;
         } else if (header.id > state->recv_id) {
             // Skips packets, reordering packets is out of scope for this project
             db<RTL8139>(WRN) << "Out of order packet id " << header.id << " " << state->recv_id << endl;
@@ -75,11 +75,11 @@ int NetService::receive(Address * src, Protocol * prot, unsigned short port,
     *prot = frame->prot();
     memcpy(data, frame->data<char>() + HEADER_SIZE, size);
 
-    db<RTL8139>(WRN) << "Receiving package id " << state->recv_id << endl;
+    db<RTL8139>(TRC) << "Receiving packet id " << state->recv_id << endl;
 
     // Send ACK
     {
-        db<RTL8139>(WRN) << "Send ACK through port " << port << endl;
+        db<RTL8139>(WRN) << "Send ACK of id " << state->recv_id << " through port " << port << endl;
         FrameHeader header = FrameHeader{port, state->recv_id, FrameHeader::ACK};
         nic->send(*src, *prot, &header, HEADER_SIZE);
     }
@@ -107,7 +107,8 @@ void NetService::timeout(unsigned short port, unsigned short id, const Address &
     db<RTL8139>(WRN) << "Retransmit port " << port << " id " << id << endl;
     state->retx_left--;
 
-    nic->send(dst, prot, data, size);
+    if (!Traits<Network>::SEND_FAULT || port != 0)
+        nic->send(dst, prot, data, size);
 
     /* Set alarm again */
     Timeout_Handler * th = new Timeout_Handler(&timeout, port, id, dst, prot, data, size);
@@ -128,7 +129,7 @@ int NetService::send(const Address & dst, const Protocol & prot,
     
     db<RTL8139>(TRC) << "Sending data: \"" << buffer + HEADER_SIZE << "\"" << endl;
     
-    Timeout_Handler th(&timeout, port, state->send_id, dst, prot, buffer, size);
+    Timeout_Handler th(&timeout, port, state->send_id, dst, prot, buffer, size + HEADER_SIZE);
     Alarm timeout_alarm(Traits<Network>::TIMEOUT * 1000000, &th);
 
     /* Simulating a send failure */
