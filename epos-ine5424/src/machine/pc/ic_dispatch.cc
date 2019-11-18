@@ -15,25 +15,22 @@ void IC::dispatch(unsigned int i)
         if((i != INT_TIMER) || Traits<IC>::hysterically_debugged)
             db<IC>(TRC) << "IC::dispatch(i=" << i << ")" << endl;
 
-        // FIXME
 // The code bellow aims at fixing an old problem with the network stack (and other interrupt driven subsystems).
 // If the propagation of an interrupt up the stack causes a thread rescheduling (e.g. a TCP segment is delivered to a blocked application)
 // the ISR, even the reentrant ones, might hold resources (e.g. network buffers) indefinitely.
 // Raising the thread's priority to a ceiling or to a value which allows preemption only by higher priority threads is an old and straightforward
-// solution, but it breaks multicore PCs. This must be investigated deeper!
+// solution!
 
-//        Thread::Criterion c = Thread::self()->priority();
-//        if(i != INT_TIMER)
-//            Thread::self()->link()->rank(-1000 + int(i));
-//
-//        db<Thread>(TRC) << "Thread::priority(this=" << Thread::self() << ",prio=" << Thread::self()->link()->rank() << ")" << endl;
-//        _int_vector[i](i);
-//
-//        if(i != INT_TIMER)
-//            Thread::self()->priority(c);
+        Thread::Criterion c = Thread::self()->priority();
+
+        if(i != INT_TIMER && i != INT_IPI)
+           Thread::self()->link()->rank(Thread::Criterion::ISR + int(i));
 
         db<Thread>(TRC) << "Thread::priority(this=" << Thread::self() << ",prio=" << Thread::self()->link()->rank() << ")" << endl;
         _int_vector[i](i);
+
+        if(i != INT_TIMER && i != INT_IPI)
+            Thread::self()->priority(c);
 
     } else {
         if(i != INT_LAST_HARD)
