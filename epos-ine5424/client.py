@@ -17,7 +17,7 @@ def serialize(sock):
         mes = input("Message: ")
         if mes == "":
             break
-        sock.sendall(mes.encode())
+        sock.sendall(mes.encode() + b"\x00")
         if RECV_DATA_FROM_SERVER:
             recv_data_from_server(sock)
 

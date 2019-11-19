@@ -3,6 +3,7 @@
 #include <machine/nic.h>
 #include <time.h>
 #include <netinterface.h>
+#include <mockgps.h>
 
 using namespace EPOS;
 
@@ -14,11 +15,20 @@ int main()
 {
 
     cout << p << "Port test" << endl;
+
+    NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
+    NIC<Ethernet>::Address self = nic->address();
+
+    char msg[100];
+    if (self[5] % 2 == 0) // Communicates with daemon
+        for (unsigned int i = 0; i < 5; i++) {
+            MockGPS::receive(msg);
+            cout << msg << endl;
+        }
+
     for (unsigned short i = 0; i < 5; i++) {
-        NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
         char data[] = "Port # sends message #.";
 
-        NIC<Ethernet>::Address self = nic->address();
         cout << p << "  MAC: " << self << endl;
 
         if(self[5] % 2) { // sender
