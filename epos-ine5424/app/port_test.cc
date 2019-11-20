@@ -23,6 +23,7 @@ int main()
     if (self[5] % 2 == 0) // Communicates with daemon
         for (unsigned int i = 0; i < 5; i++) {
             MockGPS::receive(msg);
+            MockGPS::send("Hewwo!");
             cout << msg << endl;
         }
 

@@ -1,30 +1,34 @@
 #!/usr/bin/env python3
 
+from time import sleep
 import socket
 
-HOST = "127.0.0.1"  # The server"s hostname or IP address
+HOST = '127.0.0.1'  # The server's hostname or IP address
 PORT = 65432        # The port used by the server
 
 RECV_DATA_FROM_SERVER = False
 
-def recv_data_from_server(sock):
-    data = s.recv(1024)
-    print("Received from Back-end: ", data.decode())
-
-
-def serialize(sock):
+def recv(sock):
+    data = b''
     while True:
-        mes = input("Message: ")
-        if mes == "":
-            break
-        sock.sendall(mes.encode() + b"\x00")
-        if RECV_DATA_FROM_SERVER:
-            recv_data_from_server(sock)
+        char = s.recv(1)
+        if char == b"\x00": break
+        data += char
+    text = data.decode()
+    print("Recv:", text)
+    return text
 
+def send(socket, text):
+    print("Send:", text)
+    socket.sendall(text.encode() + b'\x00')
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
-    serialize(s)
-    print("Connection Closed")
+    sleep(3) # Wait for QEMU boot
+    while True:
+        send(s, 'Hello EPOS!')
+        recv(s)
 
-print("Client Ended!")
+    print('Connection Closed')
+
+print('Client Ended!')

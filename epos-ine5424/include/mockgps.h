@@ -10,19 +10,18 @@ private:
     static UART uart;
 
 public:
-    static void send(const char* message) {
-        for (unsigned int i = 0; message[i] != 0x00; i++) {
-            uart.put(message[i]);
-        }
+    static void send(const char* message)
+    {
+        for (; *message; message++)
+            uart.put(*message);
+        uart.put('\0');
     }
 
-    static void receive(char* output, unsigned int size = 100) {
-        for (unsigned int i = 0; i < size; i++) {
-            const char c = uart.get();
-            output[i] = c;
-            if (c == 0x00) 
-                break;
-        }
+    static void receive(char* output)
+    {
+        for (char c; (c = uart.get()); output++ )
+            *output = c;
+        *(++output) = '\0';
     }
 };
 
