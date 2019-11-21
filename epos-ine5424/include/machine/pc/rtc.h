@@ -138,6 +138,7 @@ public:
 
     static Date date();
     static void date(const Date & d);
+    static Date raw_date();
 
     static Second seconds_since_epoch() { return date().to_offset(EPOCH_DAYS); }
 };

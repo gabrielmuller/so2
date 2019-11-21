@@ -7,7 +7,7 @@
 
 using namespace EPOS;
 
-OStream cout;
+//OStream cout;
 const char p[] = "(APP) ";
 
 
@@ -15,6 +15,17 @@ int main()
 {
 
     cout << p << "Port test" << endl;
+    float latitude;
+    float longitude;
+    bool north, east;
+    Clock::Date d = RTC::date();
+    cout << "RES " << MockGPS::parse_nmea("$GPGGA,121314,4124.8934,N,08151.6849,W", d, latitude, longitude, north, east) << endl;
+
+    cout << d.year() << "/" << d.month() << "/" << d.day() << " " << d.hour() << ":" << d.minute() << ":" << d.second() << endl;
+    cout << "lat " << latitude << endl;
+    cout << "long " << longitude << endl;
+    cout << (north ? 'N' : 'S') << endl;
+    cout << (east ? 'E' : 'W') << endl;
 
     NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
     NIC<Ethernet>::Address self = nic->address();

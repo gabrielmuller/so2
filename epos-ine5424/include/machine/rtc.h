@@ -48,6 +48,9 @@ public:
         unsigned int hour() const { return _h; };
         unsigned int minute() const { return _m; };
         unsigned int second() const { return _s; };
+        void hour(unsigned int n) { _h = n; };
+        void minute(unsigned int n) { _m = n; };
+        void second(unsigned int n) { _s = n; };
 
         void adjust_year(int y) { _Y += y; };
 
@@ -74,6 +77,7 @@ public:
     RTC() {}
 
     static Date date();
+    static Date raw_date();
     static void date(const Date & d);
 
     static Second seconds_since_epoch() { return 0; }

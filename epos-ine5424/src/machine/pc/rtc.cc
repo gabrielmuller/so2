@@ -6,13 +6,7 @@ __BEGIN_SYS
 
 RTC::Date RTC::date()
 {
-    unsigned int tmp = reg(SECONDS);
-    Date date(reg(YEAR), reg(MONTH), reg(DAY),
-              reg(HOURS), reg(MINUTES), tmp);
-
-    if(tmp != reg(SECONDS)) // RTC update in between?
-        date = Date(reg(YEAR), reg(MONTH), reg(DAY),
-        	    reg(HOURS), reg(MINUTES), reg(SECONDS));
+    Date date = raw_date();
 
     date.adjust_year(1900);
     if(date.year() < EPOCH_YEAR)
@@ -20,6 +14,18 @@ RTC::Date RTC::date()
 
     db<RTC>(TRC) << "RTC::date() => " << date << endl;
 
+    return date;
+}
+
+RTC::Date RTC::raw_date()
+{
+    unsigned int tmp = reg(SECONDS);
+    Date date(reg(YEAR), reg(MONTH), reg(DAY),
+              reg(HOURS), reg(MINUTES), tmp);
+
+    if(tmp != reg(SECONDS)) // RTC update in between?
+        date = Date(reg(YEAR), reg(MONTH), reg(DAY),
+        	    reg(HOURS), reg(MINUTES), reg(SECONDS));
     return date;
 }
 
