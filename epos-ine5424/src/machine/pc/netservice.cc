@@ -5,8 +5,9 @@ __BEGIN_SYS
 
 NIC<Ethernet> * NetService::nic;
 Hash<NetService::PortState, 10> NetService::ports;
+NetService::SpaceTime NetService::_device;
 
-NetService::PortState::PortState() : retx_left(Traits<Network>::RETRIES), rx_sem(0), tx_mut(0),
+NetService::PortState::PortState() : retx_left(Traits<Network>::RETRIES), rx_sem(0), tx_sem(0),
     send_id(0), recv_id(0), ack_id(0) {}
 
 NetService::PortState * NetService::port_state(unsigned short port) {
@@ -17,6 +18,26 @@ NetService::PortState * NetService::port_state(unsigned short port) {
     return ports.search_key(port)->object();
 }
     
+NetService::SpaceTime NetService::device() { return NetService::_device; }
+
+void NetService::sync(bool update_cmos = false)
+{
+    _device.date = RTC::raw_date();
+    float latitude = 0, longitude = 0;
+    bool north = false, east = false;
+    MockGPS::parse_nmea(
+        "$GPGGA,121314.56,4124.8934,N,08151.6849,W",
+        _device.date, _device.ms,
+        latitude, longitude,
+        north, east
+    );
+    MockGPS::to_xyz(latitude, longitude, north, east,
+                    _device.x, _device.y, _device.z);
+
+    if (update_cmos)
+        RTC::date(_device.date);
+}
+
 void NetService::insert_buffer(RxBuffer * buf) {
     const Ethernet::Frame * frame = buf->frame();
 
@@ -30,7 +51,7 @@ void NetService::insert_buffer(RxBuffer * buf) {
         if (header.id == state->ack_id) {
             db<RTL8139>(WRN) << "ACK received for port " << header.port << endl;
             state->ack_id++;
-            state->tx_mut.v();
+            state->tx_sem.v();
         } else if (header.id < state->ack_id) {
             db<RTL8139>(WRN) << "Late ACK from failed send at port " << header.port << endl;
         } else
@@ -100,7 +121,7 @@ void NetService::timeout(unsigned short port, unsigned short id, const Address &
 
     if (state->retx_left <= 0) {
         db<RTL8139>(WRN) << "Out of retransmissions port " << port << " id " << id << endl;
-        state->tx_mut.v();
+        state->tx_sem.v();
         return;
     }
 
@@ -147,7 +168,7 @@ int NetService::send(const Address & dst, const Protocol & prot,
     }
 
     state->send_id++;
-    state->tx_mut.p();
+    state->tx_sem.p();
 
     if (state->retx_left > 0)
         return size; // Awaken by ACK (success)

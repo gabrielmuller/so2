@@ -4,6 +4,7 @@
 #include <utility/hash.h>
 #include <time.h>
 #include <synchronizer.h>
+#include <mockgps.h>
 
 __BEGIN_SYS
 
@@ -11,6 +12,8 @@ typedef NIC<Ethernet>::Address Address;
 typedef NIC<Ethernet>::Protocol Protocol;
 typedef Ethernet::Buffer RxBuffer;
 typedef RxBuffer::List RxQueue;
+typedef Clock::Date Date;
+typedef Clock::Microsecond Microsecond;
 
 class Timeout_Handler: public Handler
 {
@@ -33,13 +36,18 @@ private:
 };
 
 namespace NetService {
+    struct SpaceTime {
+        Date date;
+        Microsecond ms;
+        float x, y, z;
+    };
+
     struct PortState {
         RxQueue queue;              // Received buffers queue
         short retx_left;            // How many retransmissions left
-        Semaphore rx_sem;
 
-        // This should be a Mutex, but it's causing linker errors for some reason
-        Semaphore tx_mut; 
+        Semaphore rx_sem;
+        Semaphore tx_sem; 
 
         unsigned int send_id;     // ID of next frame to send
         unsigned int recv_id;     // ID of next frame to receive
@@ -51,17 +59,21 @@ namespace NetService {
     struct FrameHeader {
         unsigned short port;
         unsigned int id;
+        SpaceTime st;
         enum flag : unsigned char { NONE = 0x00, ACK = 0x06 } flag;
     };
 
+    void sync(bool);
     const unsigned short HEADER_SIZE = sizeof(NetService::FrameHeader);
     PortState * port_state(unsigned short port);
     void insert_buffer(RxBuffer * buf);
     RxBuffer * remove_buffer(unsigned int port);
     void timeout(unsigned short port, unsigned short id, const Address & dst, const Protocol & prot, const void * data, unsigned int size);
+    SpaceTime device();
 
     extern Hash<PortState, 10> ports;
     extern NIC<Ethernet> * nic;
+    extern SpaceTime _device;
 
     int receive(Address * src, Protocol * prot, unsigned short port, void * data, unsigned int size);
     int send(const Address & dst, const Protocol & prot, const unsigned short port, const void * data, unsigned int size);
