@@ -19,15 +19,16 @@ def recv(sock):
     return text
 
 def send(socket, text):
-    print("Send:", text)
     socket.sendall(text.encode() + b'\x00')
+    print("Send:", text)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     sleep(3) # Wait for QEMU boot
-    while True:
-        send(s, 'Hello EPOS!')
-        recv(s)
+
+    send(s, '$GPGGA,121314.56,4124.8934,N,08151.6849,W')
+
+    sleep(1000)
 
     print('Connection Closed')
 

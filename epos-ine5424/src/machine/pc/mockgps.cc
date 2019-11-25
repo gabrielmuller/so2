@@ -53,8 +53,10 @@ void MockGPS::send(const char* message)
 
 void MockGPS::receive(char* output)
 {
-    for (char c; (c = uart.get()); output++ )
+    for (char c; (c = uart.get()); output++ ) {
         *output = c;
+        db<MockGPS>(WRN) << "|" << c;
+    }
     *(++output) = '\0';
 }
 

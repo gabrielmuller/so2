@@ -14,24 +14,18 @@ const char p[] = "(APP) ";
 int main()
 {
 
+    NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
+    NIC<Ethernet>::Address self = nic->address();
+    if (self[5] % 2 == 1) return 0;
     cout << p << "Port test" << endl;
     NetService::sync(true);
     Clock::Date d = RTC::date();
     cout << d.year() << "/" << d.month() << "/" << d.day() << " " << d.hour() << ":" << d.minute() << ":" << d.second() << endl;
-    cout << (int) NetService::device().x << " "
-         << (int) NetService::device().y << " "
-         << (int) NetService::device().z << endl; 
+    cout << "XYZ = ("
+         << (int) NetService::device().x << ", "
+         << (int) NetService::device().y << ", "
+         << (int) NetService::device().z << ")\n"; 
 
-    NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
-    NIC<Ethernet>::Address self = nic->address();
-
-    char msg[100];
-    if (self[5] % 2 == 0) // Communicates with daemon
-        for (unsigned int i = 0; i < 5; i++) {
-            MockGPS::receive(msg);
-            MockGPS::send("Hewwo!");
-            cout << msg << endl;
-        }
 
     for (unsigned short i = 0; i < 5; i++) {
         char data[] = "Port # sends message #.";

@@ -22,11 +22,14 @@ NetService::SpaceTime NetService::device() { return NetService::_device; }
 
 void NetService::sync(bool update_cmos = false)
 {
+    char rx_nmea[100];
+    MockGPS::receive(rx_nmea);
+    db<RTL8139>(WRN) << "Recv from serial: " << rx_nmea << endl;
     _device.date = RTC::raw_date();
     float latitude = 0, longitude = 0;
     bool north = false, east = false;
     MockGPS::parse_nmea(
-        "$GPGGA,121314.56,4124.8934,N,08151.6849,W",
+        rx_nmea,
         _device.date, _device.ms,
         latitude, longitude,
         north, east
