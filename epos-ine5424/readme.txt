@@ -1,19 +1,13 @@
-# Simple cross-layer protocol
+# Sincronização temporal / espacial (entrega parcial)
 
 ## Como testar
 
-    make APPLICATION=port_test run
+    make APPLICATION=nmea_test run && python3 client.py
 
 ## Teste
 
-O port_test envia 5 mensagens a 5 ports (25 pacotes no total), intercalando os
-ports.
+O nmea_test envia um pedido e recebe uma mensagem NMEA pela porta serial, faz o
+parse, atualiza a hora do relógio sem alterar a data e converte latitude /
+longitude para coordenadas cartesianas.
 
-O port 0 simula uma perda total de pacote. O comportamento esperado é 
-retransmitir três vezes e em seguida uma falha é detectada na aplicação.
-O loop receive pula o port 0, já que nenhum pacote é recebido.
-
-O port 1 simula um canal lento. O comportamento esperado é retransmitir uma ou
-duas vezes até haver sucesso.
-
-Os ports de 2 a 4 funcionam normalmente.
+Ainda falta desenvolver o protocolo de sincronização e a trilateração.

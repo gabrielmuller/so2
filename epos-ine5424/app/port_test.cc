@@ -3,7 +3,6 @@
 #include <machine/nic.h>
 #include <time.h>
 #include <netinterface.h>
-#include <mockgps.h>
 
 using namespace EPOS;
 
@@ -14,22 +13,12 @@ const char p[] = "(APP) ";
 int main()
 {
 
-    NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
-    NIC<Ethernet>::Address self = nic->address();
-    if (self[5] % 2 == 1) return 0;
     cout << p << "Port test" << endl;
-    NetService::sync(true);
-    Clock::Date d = RTC::date();
-    cout << d.year() << "/" << d.month() << "/" << d.day() << " " << d.hour() << ":" << d.minute() << ":" << d.second() << endl;
-    cout << "XYZ = ("
-         << (int) NetService::device().x << ", "
-         << (int) NetService::device().y << ", "
-         << (int) NetService::device().z << ")\n"; 
-
-
     for (unsigned short i = 0; i < 5; i++) {
+        NIC<Ethernet> * nic = Traits<Ethernet>::DEVICES::Get<0>::Result::get(0);
         char data[] = "Port # sends message #.";
 
+        NIC<Ethernet>::Address self = nic->address();
         cout << p << "  MAC: " << self << endl;
 
         if(self[5] % 2) { // sender

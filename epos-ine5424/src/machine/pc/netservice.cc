@@ -20,10 +20,11 @@ NetService::PortState * NetService::port_state(unsigned short port) {
     
 NetService::SpaceTime NetService::device() { return NetService::_device; }
 
-void NetService::sync(bool update_cmos = false)
+void NetService::sync(MockGPS & gps, bool update_cmos)
 {
+    gps.send("Where am I?");
     char rx_nmea[100];
-    MockGPS::receive(rx_nmea);
+    gps.receive(rx_nmea);
     db<RTL8139>(WRN) << "Recv from serial: " << rx_nmea << endl;
     _device.date = RTC::raw_date();
     float latitude = 0, longitude = 0;

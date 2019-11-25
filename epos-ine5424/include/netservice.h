@@ -63,7 +63,7 @@ namespace NetService {
         enum flag : unsigned char { NONE = 0x00, ACK = 0x06 } flag;
     };
 
-    void sync(bool);
+    void sync(MockGPS & gps, bool update_cmos);
     const unsigned short HEADER_SIZE = sizeof(NetService::FrameHeader);
     PortState * port_state(unsigned short port);
     void insert_buffer(RxBuffer * buf);

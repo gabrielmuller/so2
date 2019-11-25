@@ -2,7 +2,7 @@
 
 __BEGIN_SYS
 
-UART MockGPS::uart(1, 115200, 8, 0, 1);
+MockGPS::MockGPS(UART uart) : uart(uart) {}
 
 unsigned int MockGPS::digit(const char sentence)
 {
@@ -53,10 +53,8 @@ void MockGPS::send(const char* message)
 
 void MockGPS::receive(char* output)
 {
-    for (char c; (c = uart.get()); output++ ) {
+    for (char c; (c = uart.get()); output++ )
         *output = c;
-        db<MockGPS>(WRN) << "|" << c;
-    }
     *(++output) = '\0';
 }
 

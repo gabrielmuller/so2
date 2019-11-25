@@ -8,15 +8,16 @@ __BEGIN_SYS
 class MockGPS 
 {
 private:
-    static UART uart;
+    UART uart;
     static unsigned int digit(const char sentence);
     static float parse_float(const char * & sentence);
     inline static float cos(float x);
     inline static float sin(float x);
 
 public:
-    static void send(const char* message);
-    static void receive(char* output);
+    MockGPS(UART);
+    void send(const char* message);
+    void receive(char* output);
     static int parse_nmea(
             const char * sentence,
             Clock::Date & date, Clock::Microsecond & ms,

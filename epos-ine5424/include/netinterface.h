@@ -4,6 +4,7 @@
 #include <utility/hash.h>
 #include <time.h>
 #include <synchronizer.h>
+#include <mockgps.h>
 
 __BEGIN_SYS
 
@@ -20,7 +21,7 @@ namespace NetService {
     SpaceTime device();
     int receive(Address * src, Protocol * prot, unsigned short port, void * data, unsigned int size);
     int send(const Address & dst, const Protocol & prot, const unsigned short port, const void * data, unsigned int size);
-    void sync(bool);
+    void sync(MockGPS & gps, bool update_cmos);
 };
 
 __END_SYS
